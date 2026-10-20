@@ -28,3 +28,10 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+### Documentación local (no versionada) ###
+/docs/
+/CLAUDE.md
+
+### Gradle ###
+.gradle/
+build/
