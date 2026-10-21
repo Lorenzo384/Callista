@@ -57,4 +57,12 @@ public class ActionPanel {
     public void setCalculateEnabled(boolean enabled) {
         calculateButton.setEnabled(enabled);
     }
+
+    /**
+     * Marca «Calcular» como botón principal de la ventana: el tema lo
+     * resalta con los colores de la paleta.
+     */
+    public void makeCalculateDefault(JRootPane rootPane) {
+        rootPane.setDefaultButton(calculateButton);
+    }
 }

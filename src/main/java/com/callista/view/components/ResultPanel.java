@@ -52,6 +52,7 @@ public class ResultPanel {
 
     public ResultPanel() {
         resultLabel.setFont(ViewStyles.RESULT_FONT);
+        resultLabel.setBorder(BorderFactory.createEmptyBorder(6, 10, 6, 10));
     }
 
     public void showResult(String result) {
@@ -60,5 +61,16 @@ public class ResultPanel {
 
     public void clear() {
         resultLabel.setText(EMPTY);
+    }
+
+    /**
+     * Colores propios de la paleta activa; {@code null} usa los del tema.
+     * El fondo se pinta solo detrás del resultado, como la pantalla de una
+     * calculadora.
+     */
+    public void setColors(Color background, Color foreground) {
+        resultLabel.setOpaque(background != null);
+        resultLabel.setBackground(background);
+        resultLabel.setForeground(foreground);
     }
 }

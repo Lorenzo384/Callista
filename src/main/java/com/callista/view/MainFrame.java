@@ -8,6 +8,7 @@ import com.callista.view.components.KeypadPanel;
 import com.callista.view.components.ResultPanel;
 import com.callista.view.components.StepsPanel;
 import com.callista.view.panels.EvaluationPanel;
+import com.formdev.flatlaf.FlatLaf;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -108,10 +109,15 @@ public class MainFrame extends JFrame {
 
     private Set<OperationType> availableOperations = Set.of();
 
-    public MainFrame() {
+    /**
+     * @param palette paleta de colores ya instalada con {@link ColorPalette#install()}
+     */
+    public MainFrame(ColorPalette palette) {
         super(TITLE);
         setContentPane(rootPanel);
-        setJMenuBar(createMenuBar());
+        setJMenuBar(createMenuBar(palette));
+        actionPanel.makeCalculateDefault(getRootPane());
+        resultPanel.setColors(palette.getResultBackground(), palette.getResultForeground());
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setMinimumSize(new Dimension(400, 700));
         setSize(440, 780);
@@ -239,11 +245,22 @@ public class MainFrame extends JFrame {
 
     // ------------------------------------------------------------ menú
 
-    private JMenuBar createMenuBar() {
+    private JMenuBar createMenuBar(ColorPalette activePalette) {
         JMenuItem exit = new JMenuItem("Salir");
         exit.addActionListener(e -> dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING)));
         JMenu file = new JMenu("Archivo");
         file.add(exit);
+
+        JMenu palettes = new JMenu("Paleta de colores");
+        ButtonGroup paletteGroup = new ButtonGroup();
+        for (ColorPalette palette : ColorPalette.values()) {
+            JRadioButtonMenuItem item = new JRadioButtonMenuItem(palette.getDisplayName(), palette == activePalette);
+            item.addActionListener(e -> changePalette(palette));
+            paletteGroup.add(item);
+            palettes.add(item);
+        }
+        JMenu appearance = new JMenu("Apariencia");
+        appearance.add(palettes);
 
         JMenuItem syntax = new JMenuItem("Cómo escribir expresiones");
         syntax.addActionListener(e -> showSyntaxHelp());
@@ -257,8 +274,20 @@ public class MainFrame extends JFrame {
 
         JMenuBar menuBar = new JMenuBar();
         menuBar.add(file);
+        menuBar.add(appearance);
         menuBar.add(help);
         return menuBar;
+    }
+
+    /**
+     * Cambia la paleta al momento, sin reiniciar, y la recuerda para la
+     * próxima vez. Es puramente visual: no pasa por el controlador.
+     */
+    private void changePalette(ColorPalette palette) {
+        palette.install();
+        FlatLaf.updateUI();
+        resultPanel.setColors(palette.getResultBackground(), palette.getResultForeground());
+        palette.save(ColorPalette.userPreferences());
     }
 
     private void showSyntaxHelp() {

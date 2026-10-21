@@ -27,9 +27,12 @@ public final class ViewStyles {
 
     /**
      * Gris de los textos secundarios (ayudas y barra de estado).
+     *
+     * <p>Se devuelve una copia que no es {@code UIResource}: así el color se
+     * conserva cuando se cambia la paleta y Swing reinstala los colores del tema.</p>
      */
     public static Color secondaryTextColor() {
         Color color = UIManager.getColor("Label.disabledForeground");
-        return color != null ? color : Color.GRAY;
+        return color != null ? new Color(color.getRGB()) : Color.GRAY;
     }
 }
