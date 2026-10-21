@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.callista.view.components.InputPanel">
+  <grid id="01a01" binding="rootPanel" layout-manager="GridLayoutManager" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+    <margin top="4" left="8" bottom="8" right="8"/>
+    <constraints>
+      <xy x="20" y="20" width="420" height="90"/>
+    </constraints>
+    <properties/>
+    <border type="none" title="Expresión"/>
+    <children>
+      <component id="01a02" class="javax.swing.JLabel">
+        <constraints>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <text value="f(x) ="/>
+        </properties>
+      </component>
+      <component id="01a03" class="javax.swing.JTextField" binding="expressionField">
+        <constraints>
+          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+            <preferred-size width="150" height="-1"/>
+          </grid>
+        </constraints>
+        <properties>
+          <toolTipText value="Escribe la función, por ejemplo 3x^2 + sen(x)"/>
+        </properties>
+      </component>
+      <component id="01a04" class="javax.swing.JTextArea" binding="interpretationArea">
+        <constraints>
+          <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false">
+            <minimum-size width="50" height="38"/>
+            <preferred-size width="150" height="38"/>
+          </grid>
+        </constraints>
+        <properties>
+          <editable value="false"/>
+          <focusable value="false"/>
+          <lineWrap value="true"/>
+          <opaque value="false"/>
+          <text value="Se interpreta: —"/>
+          <wrapStyleWord value="true"/>
+        </properties>
+      </component>
+    </children>
+  </grid>
+</form>
