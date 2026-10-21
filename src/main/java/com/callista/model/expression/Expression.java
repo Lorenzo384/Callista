@@ -37,6 +37,13 @@ public interface Expression {
     double evaluate(double x);
 
     /**
+     * Indica si la expresión depende de la variable. Las que no dependen
+     * (como {@code 3}, {@code π^2} o {@code ln(2)}) se tratan como constantes
+     * al derivar o integrar.
+     */
+    boolean dependsOnVariable();
+
+    /**
      * Prioridad del operador de este nodo; un valor mayor se agrupa primero.
      * Se usa para decidir dónde hacen falta paréntesis al convertir a texto.
      *

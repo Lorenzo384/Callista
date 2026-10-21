@@ -23,6 +23,11 @@ public final class Negation implements Expression {
     }
 
     @Override
+    public boolean dependsOnVariable() {
+        return operand.dependsOnVariable();
+    }
+
+    @Override
     public int precedence() {
         return UNARY;
     }

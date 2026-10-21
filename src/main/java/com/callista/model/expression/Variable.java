@@ -27,6 +27,11 @@ public final class Variable implements Expression {
     }
 
     @Override
+    public boolean dependsOnVariable() {
+        return true;
+    }
+
+    @Override
     public int precedence() {
         return ATOM;
     }

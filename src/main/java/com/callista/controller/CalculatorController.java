@@ -3,25 +3,33 @@ package com.callista.controller;
 import com.callista.model.CalculatorModel;
 import com.callista.model.entity.CalculationResult;
 import com.callista.model.entity.OperationType;
-import com.callista.model.entity.SolutionStep;
 import com.callista.model.exception.InvalidExpressionException;
 import com.callista.model.expression.Expression;
 import com.callista.view.MainFrame;
 
+import java.util.Map;
+import java.util.Optional;
+
 /**
  * Controlador principal: conecta los eventos de la ventana con el modelo.
  *
- * <p>Lee lo que escribió el usuario, pide al modelo que lo interprete o lo
- * calcule y le devuelve a la vista el resultado o el mensaje de error.</p>
+ * <p>Se encarga de lo común a todas las operaciones (vista previa de la
+ * expresión, interpretarla al calcular, limpiar, cambiar de modo) y delega
+ * los parámetros y el cálculo de cada operación en su
+ * {@link OperationController}.</p>
  */
 public class CalculatorController {
 
     private final MainFrame view;
     private final CalculatorModel model;
+    private final Map<OperationType, OperationController> operations;
 
     public CalculatorController(MainFrame view, CalculatorModel model) {
         this.view = view;
         this.model = model;
+        this.operations = Map.of(
+                OperationType.EVALUATE, new EvaluationController(view, model),
+                OperationType.DERIVATIVE, new DerivativeController(view, model));
 
         view.setOperations(OperationType.values(), model.getSupportedOperations());
         view.onOperationChanged(this::changeOperation);
@@ -57,7 +65,8 @@ public class CalculatorController {
     }
 
     private void calculate() {
-        if (!isSupported(view.getSelectedOperation())) {
+        OperationType operation = view.getSelectedOperation();
+        if (!isSupported(operation)) {
             return;
         }
 
@@ -72,20 +81,13 @@ public class CalculatorController {
             return;
         }
 
-        double x;
-        try {
-            x = model.interpretValue(view.getValueText());
-        } catch (InvalidExpressionException e) {
-            view.showValueError(e.getMessage(), e.getPosition());
+        Optional<CalculationResult> result = operations.get(operation).calculate(function);
+        if (result.isPresent()) {
+            view.showResult(result.get().getSummary(), result.get().getSteps());
+            view.setStatus("Listo");
+        } else {
             view.clearResult();
-            view.setStatus("Revisa el valor de x");
-            return;
         }
-
-        CalculationResult result = model.evaluate(function, x);
-        view.showResult(result.getSummary(),
-                result.getSteps().stream().map(SolutionStep::getDescription).toList());
-        view.setStatus("Listo");
     }
 
     private void clear() {
@@ -94,6 +96,6 @@ public class CalculatorController {
     }
 
     private boolean isSupported(OperationType operation) {
-        return model.getSupportedOperations().contains(operation);
+        return model.getSupportedOperations().contains(operation) && operations.containsKey(operation);
     }
 }

@@ -26,9 +26,30 @@ public final class Constant implements Expression {
         return value;
     }
 
+    /**
+     * Indica si es un número escrito con dígitos, y no una constante con
+     * nombre como {@code π} o {@code e}. Solo los números se pueden operar
+     * entre sí sin perder cómo se escribieron.
+     */
+    public boolean isNumber() {
+        return symbol == null;
+    }
+
+    /**
+     * Indica si es exactamente el número {@code expected}.
+     */
+    public boolean isNumber(double expected) {
+        return isNumber() && value == expected;
+    }
+
     @Override
     public double evaluate(double x) {
         return value;
+    }
+
+    @Override
+    public boolean dependsOnVariable() {
+        return false;
     }
 
     /**

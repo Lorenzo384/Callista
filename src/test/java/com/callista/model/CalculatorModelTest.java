@@ -21,8 +21,8 @@ class CalculatorModelTest {
     private final CalculatorModel model = new CalculatorModel();
 
     @Test
-    void onlyEvaluationIsSupportedForNow() {
-        assertEquals(Set.of(OperationType.EVALUATE), model.getSupportedOperations());
+    void supportsEvaluationAndDerivatives() {
+        assertEquals(Set.of(OperationType.EVALUATE, OperationType.DERIVATIVE), model.getSupportedOperations());
     }
 
     @Test
@@ -69,5 +69,47 @@ class CalculatorModelTest {
 
         CalculationResult division = model.evaluate(model.interpret("1/x"), 0);
         assertEquals("f(0) no está definida", division.getSummary());
+    }
+
+    @Test
+    void derivesAndExplainsTheSteps() throws InvalidExpressionException {
+        CalculationResult result = model.derive(model.interpret("3x^2 + sen(x)"), 1);
+
+        assertEquals("f'(x) = 6*x + cos(x)", result.getSummary());
+        List<String> steps = result.getSteps().stream().map(SolutionStep::getDescription).toList();
+        assertEquals("Función: f(x) = 3*x^2 + sin(x)", steps.getFirst());
+        assertEquals("Resultado: f'(x) = 6*x + cos(x)", steps.getLast());
+    }
+
+    @Test
+    void derivesSeveralTimes() throws InvalidExpressionException {
+        Expression function = model.interpret("x^3 - 4x + ln(x)");
+        assertEquals("f''(x) = 6*x - 1/x^2", model.derive(function, 2).getSummary());
+        assertEquals("f'''(x) = 6 + 2*x/(x^2)^2", model.derive(function, 3).getSummary());
+
+        List<SolutionStep> steps = model.derive(function, 2).getSteps();
+        List<String> main = steps.stream().filter(s -> s.getLevel() == 0)
+                .map(SolutionStep::getDescription).toList();
+        assertEquals(List.of(
+                "Función: f(x) = x^3 - 4*x + ln(x)",
+                "Primera derivada: se deriva f(x) = x^3 - 4*x + ln(x)",
+                "Segunda derivada: se deriva f'(x) = 3*x^2 - 4 + 1/x"), main);
+    }
+
+    @Test
+    void evaluatesTheDerivativeAtAPoint() throws InvalidExpressionException {
+        CalculationResult result = model.derive(model.interpret("x^2*sen(3x)"), 1, Math.PI);
+        assertEquals("f'(3.141592654) = -29.6088132", result.getSummary());
+        assertTrue(result.getSteps().getLast().getDescription().startsWith("Evaluar en x = 3.141592654"));
+
+        CalculationResult undefined = model.derive(model.interpret("ln(x)"), 1, 0);
+        assertEquals("f'(0) no está definida", undefined.getSummary());
+    }
+
+    @Test
+    void rejectsOrdersOutOfRange() throws InvalidExpressionException {
+        Expression function = model.interpret("x");
+        assertThrows(IllegalArgumentException.class, () -> model.derive(function, 0));
+        assertThrows(IllegalArgumentException.class, () -> model.derive(function, 4));
     }
 }
