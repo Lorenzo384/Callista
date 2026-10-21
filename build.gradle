@@ -13,9 +13,14 @@ java {
 
 repositories {
     mavenCentral()
+    // Runtime de los formularios de IntelliJ GUI Designer (GridLayoutManager)
+    maven { url = 'https://www.jetbrains.com/intellij-repository/releases' }
 }
 
 dependencies {
+    implementation 'com.formdev:flatlaf:3.7.2'
+    implementation 'com.jetbrains.intellij.java:java-gui-forms-rt:262.10968.176'
+
     testImplementation platform('org.junit:junit-bom:6.1.3')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -23,6 +28,8 @@ dependencies {
 
 application {
     mainClass = 'com.callista.Main'
+    // FlatLaf carga una librería nativa para integrarse con la ventana del sistema
+    applicationDefaultJvmArgs = ['--enable-native-access=ALL-UNNAMED']
 }
 
 tasks.withType(JavaCompile).configureEach {

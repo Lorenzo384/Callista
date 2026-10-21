@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.callista.view.components.ResultPanel">
+  <grid id="04d01" binding="rootPanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+    <margin top="4" left="8" bottom="8" right="8"/>
+    <constraints>
+      <xy x="20" y="20" width="420" height="60"/>
+    </constraints>
+    <properties/>
+    <border type="none" title="Resultado"/>
+    <children>
+      <component id="04d02" class="javax.swing.JLabel" binding="resultLabel">
+        <constraints>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties>
+          <horizontalAlignment value="4"/>
+          <text value="—"/>
+        </properties>
+      </component>
+    </children>
+  </grid>
+</form>
