@@ -27,8 +27,23 @@ public final class Variable implements Expression {
     }
 
     @Override
+    public boolean dependsOnVariable() {
+        return true;
+    }
+
+    @Override
     public int precedence() {
         return ATOM;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        return other instanceof Variable v && name.equals(v.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return name.hashCode();
     }
 
     @Override

@@ -20,6 +20,11 @@ public final class Sum extends BinaryOperation {
     }
 
     @Override
+    protected boolean isAssociative() {
+        return true;
+    }
+
+    @Override
     protected String symbol() {
         return "+";
     }

@@ -3,6 +3,8 @@ package com.callista.model.expression;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -63,6 +65,37 @@ class ExpressionTest {
         assertEquals("x/(x*2)", new Quotient(x, new Product(x, c(2))).toString());
         assertEquals("x/2/3", new Quotient(new Quotient(x, c(2)), c(3)).toString());
         assertEquals("x/(2/3)", new Quotient(x, new Quotient(c(2), c(3))).toString());
+    }
+
+    @Test
+    void omitsParenthesesForAssociativeOperations() {
+        // a*(b*c) = a*b*c y a + (b - c) = a + b - c
+        assertEquals("x*2*x", new Product(x, new Product(c(2), x)).toString());
+        assertEquals("x + x - 1", new Sum(x, new Difference(x, c(1))).toString());
+        // pero a - (b - c) y a/(b/c) sí los necesitan
+        assertEquals("x - (x - 1)", new Difference(x, new Difference(x, c(1))).toString());
+    }
+
+    @Test
+    void knowsWhetherItDependsOnTheVariable() {
+        assertTrue(x.dependsOnVariable());
+        assertTrue(new Sum(c(1), new Power(x, c(2))).dependsOnVariable());
+        assertTrue(new FunctionCall(MathFunction.SIN, x).dependsOnVariable());
+        assertFalse(c(3).dependsOnVariable());
+        assertFalse(new Power(Constant.PI, c(2)).dependsOnVariable());
+        assertFalse(new FunctionCall(MathFunction.LN, c(2)).dependsOnVariable());
+        assertFalse(new Negation(Constant.E).dependsOnVariable());
+    }
+
+    @Test
+    void comparesStructurally() {
+        assertEquals(new Power(x, c(2)), new Power(new Variable("x"), c(2)));
+        assertEquals(new Power(x, c(2)).hashCode(), new Power(new Variable("x"), c(2)).hashCode());
+        assertEquals(new FunctionCall(MathFunction.SIN, x), new FunctionCall(MathFunction.SIN, x));
+        assertEquals(c(0), c(-0.0));
+        assertNotEquals(new Sum(x, c(1)), new Sum(c(1), x));
+        assertNotEquals(new Sum(x, c(1)), new Product(x, c(1)));
+        assertNotEquals(Constant.PI, c(Math.PI));
     }
 
     @Test

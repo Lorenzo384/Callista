@@ -55,12 +55,23 @@ public class ResultPanel {
         resultLabel.setBorder(BorderFactory.createEmptyBorder(6, 10, 6, 10));
     }
 
+    /**
+     * Muestra el resultado. Si es largo (por ejemplo, una derivada) se usa
+     * una letra más pequeña; el texto completo queda en el tooltip y en el
+     * procedimiento.
+     */
     public void showResult(String result) {
+        float size = result.length() <= 24 ? ViewStyles.RESULT_FONT.getSize2D()
+                : result.length() <= 34 ? 17f : 14f;
+        resultLabel.setFont(ViewStyles.RESULT_FONT.deriveFont(size));
         resultLabel.setText(result);
+        resultLabel.setToolTipText(result);
     }
 
     public void clear() {
+        resultLabel.setFont(ViewStyles.RESULT_FONT);
         resultLabel.setText(EMPTY);
+        resultLabel.setToolTipText(null);
     }
 
     /**

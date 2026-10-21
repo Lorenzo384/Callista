@@ -1,5 +1,7 @@
 package com.callista.model.expression;
 
+import java.util.Objects;
+
 /**
  * Número fijo, como {@code 3}, {@code 0.5}, {@code π} o {@code e}.
  */
@@ -26,9 +28,30 @@ public final class Constant implements Expression {
         return value;
     }
 
+    /**
+     * Indica si es un número escrito con dígitos, y no una constante con
+     * nombre como {@code π} o {@code e}. Solo los números se pueden operar
+     * entre sí sin perder cómo se escribieron.
+     */
+    public boolean isNumber() {
+        return symbol == null;
+    }
+
+    /**
+     * Indica si es exactamente el número {@code expected}.
+     */
+    public boolean isNumber(double expected) {
+        return isNumber() && value == expected;
+    }
+
     @Override
     public double evaluate(double x) {
         return value;
+    }
+
+    @Override
+    public boolean dependsOnVariable() {
+        return false;
     }
 
     /**
@@ -38,6 +61,19 @@ public final class Constant implements Expression {
     @Override
     public int precedence() {
         return value < 0 ? UNARY : ATOM;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        // + 0.0 hace que -0.0 y 0.0 se consideren iguales
+        return other instanceof Constant c
+                && Double.compare(value + 0.0, c.value + 0.0) == 0
+                && Objects.equals(symbol, c.symbol);
+    }
+
+    @Override
+    public int hashCode() {
+        return Double.hashCode(value + 0.0) * 31 + Objects.hashCode(symbol);
     }
 
     /**

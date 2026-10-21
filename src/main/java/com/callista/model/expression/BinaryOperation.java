@@ -28,6 +28,11 @@ public abstract class BinaryOperation implements Expression {
         return right;
     }
 
+    @Override
+    public boolean dependsOnVariable() {
+        return left.dependsOnVariable() || right.dependsOnVariable();
+    }
+
     /**
      * Símbolo del operador, por ejemplo {@code "+"} o {@code "^"}.
      */
@@ -41,12 +46,39 @@ public abstract class BinaryOperation implements Expression {
         return false;
     }
 
+    /**
+     * Indica si la operación es asociativa, es decir, si {@code a ∘ (b ∘ c)}
+     * vale lo mismo que {@code (a ∘ b) ∘ c}. La suma y el producto lo son, así
+     * que {@code x*(2*y)} se escribe {@code x*2*y}; la resta y la división no:
+     * {@code x - (y + 1)} conserva sus paréntesis.
+     */
+    protected boolean isAssociative() {
+        return false;
+    }
+
     @Override
     public String toString() {
         String separator = precedence() == ADDITIVE ? " " + symbol() + " " : symbol();
+        boolean rightTie = !isRightAssociative() && !isAssociative();
         return wrap(left, needsParentheses(left, isRightAssociative()))
                 + separator
-                + wrap(right, needsParentheses(right, !isRightAssociative()) || isNegative(right));
+                + wrap(right, needsParentheses(right, rightTie) || isNegative(right));
+    }
+
+    /**
+     * Iguales si son la misma operación con los mismos operandos, en el
+     * mismo orden ({@code x + 1} no es igual a {@code 1 + x}).
+     */
+    @Override
+    public boolean equals(Object other) {
+        return other != null && getClass() == other.getClass()
+                && left.equals(((BinaryOperation) other).left)
+                && right.equals(((BinaryOperation) other).right);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getClass().getSimpleName(), left, right);
     }
 
     /**

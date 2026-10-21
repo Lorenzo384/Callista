@@ -29,6 +29,11 @@ public final class FunctionCall implements Expression {
         return function.apply(argument.evaluate(x));
     }
 
+    @Override
+    public boolean dependsOnVariable() {
+        return argument.dependsOnVariable();
+    }
+
     /**
      * El argumento ya va entre paréntesis, así que la llamada nunca necesita
      * paréntesis extra: {@code sin(x)^2}, {@code -ln(x)}.
@@ -36,6 +41,16 @@ public final class FunctionCall implements Expression {
     @Override
     public int precedence() {
         return ATOM;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        return other instanceof FunctionCall f && function == f.function && argument.equals(f.argument);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(function, argument);
     }
 
     @Override

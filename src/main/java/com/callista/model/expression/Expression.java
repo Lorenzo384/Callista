@@ -37,6 +37,13 @@ public interface Expression {
     double evaluate(double x);
 
     /**
+     * Indica si la expresión depende de la variable. Las que no dependen
+     * (como {@code 3}, {@code π^2} o {@code ln(2)}) se tratan como constantes
+     * al derivar o integrar.
+     */
+    boolean dependsOnVariable();
+
+    /**
      * Prioridad del operador de este nodo; un valor mayor se agrupa primero.
      * Se usa para decidir dónde hacen falta paréntesis al convertir a texto.
      *
@@ -51,4 +58,16 @@ public interface Expression {
      */
     @Override
     String toString();
+
+    /**
+     * Igualdad <b>estructural</b>: dos expresiones son iguales si tienen el
+     * mismo árbol ({@code x^2} y {@code x^2}). No reconoce equivalencias
+     * matemáticas ({@code x + x} no es igual a {@code 2*x}); para eso se
+     * simplifican primero.
+     */
+    @Override
+    boolean equals(Object other);
+
+    @Override
+    int hashCode();
 }
