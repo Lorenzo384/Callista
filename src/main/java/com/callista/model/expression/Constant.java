@@ -1,5 +1,7 @@
 package com.callista.model.expression;
 
+import java.util.Objects;
+
 /**
  * Número fijo, como {@code 3}, {@code 0.5}, {@code π} o {@code e}.
  */
@@ -59,6 +61,19 @@ public final class Constant implements Expression {
     @Override
     public int precedence() {
         return value < 0 ? UNARY : ATOM;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        // + 0.0 hace que -0.0 y 0.0 se consideren iguales
+        return other instanceof Constant c
+                && Double.compare(value + 0.0, c.value + 0.0) == 0
+                && Objects.equals(symbol, c.symbol);
+    }
+
+    @Override
+    public int hashCode() {
+        return Double.hashCode(value + 0.0) * 31 + Objects.hashCode(symbol);
     }
 
     /**

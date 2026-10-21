@@ -66,6 +66,22 @@ public abstract class BinaryOperation implements Expression {
     }
 
     /**
+     * Iguales si son la misma operación con los mismos operandos, en el
+     * mismo orden ({@code x + 1} no es igual a {@code 1 + x}).
+     */
+    @Override
+    public boolean equals(Object other) {
+        return other != null && getClass() == other.getClass()
+                && left.equals(((BinaryOperation) other).left)
+                && right.equals(((BinaryOperation) other).right);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getClass().getSimpleName(), left, right);
+    }
+
+    /**
      * Un hijo necesita paréntesis si su operador agrupa más débil que este,
      * o si agrupa igual pero está en el lado contrario a la asociatividad,
      * por ejemplo {@code x - (y + z)} o {@code (x^2)^3}.

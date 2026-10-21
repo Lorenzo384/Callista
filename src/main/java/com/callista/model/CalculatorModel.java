@@ -6,6 +6,8 @@ import com.callista.model.entity.OperationType;
 import com.callista.model.entity.SolutionStep;
 import com.callista.model.exception.InvalidExpressionException;
 import com.callista.model.expression.Expression;
+import com.callista.model.expression.SimplificationRule;
+import com.callista.model.expression.Simplifier;
 import com.callista.model.parser.ExpressionParser;
 import com.callista.util.FormatUtils;
 
@@ -118,8 +120,8 @@ public class CalculatorModel {
                 steps.add(new SolutionStep(ORDINALS[k] + " derivada: se deriva "
                         + derivativeName(k - 1) + " = " + current));
             }
-            current = derivativeCalculator.derive(current, steps, ruleLevel);
-            steps.add(new SolutionStep("Resultado: " + derivativeName(k) + " = " + current, ruleLevel));
+            Expression derivative = derivativeCalculator.derive(current, steps, ruleLevel);
+            current = simplify(derivative, derivativeName(k), steps, ruleLevel);
         }
 
         String name = derivativeName(order);
@@ -138,6 +140,33 @@ public class CalculatorModel {
         String result = image + " = " + FormatUtils.formatNumber(value);
         steps.add(new SolutionStep("Evaluar en x = " + FormatUtils.formatNumber(x) + ": " + result));
         return new CalculationResult(result, steps);
+    }
+
+    /**
+     * Simplifica un resultado. Si cambia, lo explica en dos pasos: lo que se
+     * obtuvo al aplicar las reglas y la versión simplificada, indicando qué se
+     * hizo («agrupar términos semejantes y cancelar factores comunes»).
+     */
+    private static Expression simplify(Expression result, String name, List<SolutionStep> steps, int level) {
+        Set<SimplificationRule> applied = EnumSet.noneOf(SimplificationRule.class);
+        Expression simplified = Simplifier.simplify(result, applied);
+        if (simplified.equals(result)) {
+            steps.add(new SolutionStep("Resultado: " + name + " = " + result, level));
+            return result;
+        }
+        String how = applied.isEmpty() ? "" : " (" + joinInSpanish(applied) + ")";
+        steps.add(new SolutionStep("Se obtiene: " + name + " = " + result, level));
+        steps.add(new SolutionStep("Simplificar" + how + ": " + name + " = " + simplified, level));
+        return simplified;
+    }
+
+    /** «a», «a y b», «a, b y c». */
+    private static String joinInSpanish(Set<SimplificationRule> rules) {
+        List<String> parts = rules.stream().map(SimplificationRule::getDescription).toList();
+        if (parts.size() == 1) {
+            return parts.getFirst();
+        }
+        return String.join(", ", parts.subList(0, parts.size() - 1)) + " y " + parts.getLast();
     }
 
     /** {@code f(x)}, {@code f'(x)}, {@code f''(x)}… */

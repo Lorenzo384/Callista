@@ -85,7 +85,7 @@ class CalculatorModelTest {
     void derivesSeveralTimes() throws InvalidExpressionException {
         Expression function = model.interpret("x^3 - 4x + ln(x)");
         assertEquals("f''(x) = 6*x - 1/x^2", model.derive(function, 2).getSummary());
-        assertEquals("f'''(x) = 6 + 2*x/(x^2)^2", model.derive(function, 3).getSummary());
+        assertEquals("f'''(x) = 6 + 2/x^3", model.derive(function, 3).getSummary());
 
         List<SolutionStep> steps = model.derive(function, 2).getSteps();
         List<String> main = steps.stream().filter(s -> s.getLevel() == 0)
@@ -111,5 +111,29 @@ class CalculatorModelTest {
         Expression function = model.interpret("x");
         assertThrows(IllegalArgumentException.class, () -> model.derive(function, 0));
         assertThrows(IllegalArgumentException.class, () -> model.derive(function, 4));
+    }
+
+    @Test
+    void simplifiesTheDerivativeAndSaysHow() throws InvalidExpressionException {
+        CalculationResult result = model.derive(model.interpret("x^x"), 1);
+
+        assertEquals("f'(x) = x^x*(ln(x) + 1)", result.getSummary());
+        List<String> steps = result.getSteps().stream().map(SolutionStep::getDescription).toList();
+        assertEquals("Se obtiene: f'(x) = x^x*(ln(x) + x/x)", steps.get(steps.size() - 2));
+        assertEquals("Simplificar (cancelar factores comunes): f'(x) = x^x*(ln(x) + 1)", steps.getLast());
+    }
+
+    @Test
+    void doesNotAddASimplificationStepWhenNothingChanges() throws InvalidExpressionException {
+        List<String> steps = model.derive(model.interpret("3x^2 + sen(x)"), 1).getSteps().stream()
+                .map(SolutionStep::getDescription).toList();
+        assertTrue(steps.stream().noneMatch(step -> step.startsWith("Simplificar")));
+    }
+
+    @Test
+    void namesSeveralSimplificationsInSpanish() throws InvalidExpressionException {
+        List<SolutionStep> steps = model.derive(model.interpret("x^3 - 4x + ln(x)"), 3).getSteps();
+        assertTrue(steps.stream().map(SolutionStep::getDescription)
+                .anyMatch(step -> step.equals("Simplificar (aplicar leyes de los exponentes): f'''(x) = 6 + 2/x^3")));
     }
 }

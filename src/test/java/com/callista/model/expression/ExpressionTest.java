@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -84,6 +85,17 @@ class ExpressionTest {
         assertFalse(new Power(Constant.PI, c(2)).dependsOnVariable());
         assertFalse(new FunctionCall(MathFunction.LN, c(2)).dependsOnVariable());
         assertFalse(new Negation(Constant.E).dependsOnVariable());
+    }
+
+    @Test
+    void comparesStructurally() {
+        assertEquals(new Power(x, c(2)), new Power(new Variable("x"), c(2)));
+        assertEquals(new Power(x, c(2)).hashCode(), new Power(new Variable("x"), c(2)).hashCode());
+        assertEquals(new FunctionCall(MathFunction.SIN, x), new FunctionCall(MathFunction.SIN, x));
+        assertEquals(c(0), c(-0.0));
+        assertNotEquals(new Sum(x, c(1)), new Sum(c(1), x));
+        assertNotEquals(new Sum(x, c(1)), new Product(x, c(1)));
+        assertNotEquals(Constant.PI, c(Math.PI));
     }
 
     @Test

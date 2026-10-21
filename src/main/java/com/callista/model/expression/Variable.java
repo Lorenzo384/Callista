@@ -37,6 +37,16 @@ public final class Variable implements Expression {
     }
 
     @Override
+    public boolean equals(Object other) {
+        return other instanceof Variable v && name.equals(v.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return name.hashCode();
+    }
+
+    @Override
     public String toString() {
         return name;
     }

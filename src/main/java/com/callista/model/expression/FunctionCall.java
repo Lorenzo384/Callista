@@ -44,6 +44,16 @@ public final class FunctionCall implements Expression {
     }
 
     @Override
+    public boolean equals(Object other) {
+        return other instanceof FunctionCall f && function == f.function && argument.equals(f.argument);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(function, argument);
+    }
+
+    @Override
     public String toString() {
         return function.getName() + "(" + argument + ")";
     }

@@ -1,15 +1,26 @@
 package com.callista.model.expression;
 
+import java.util.EnumSet;
+import java.util.Set;
+
 /**
- * Simplificación de expresiones.
+ * Simplificación de expresiones, en dos niveles:
  *
- * <p>Por ahora ofrece <b>constructores que simplifican lo obvio</b> al armar
- * una expresión nueva: en lugar de {@code new Sum(a, b)} se usa
- * {@code Simplifier.sum(a, b)}, que devuelve {@code a} si {@code b} es 0.
- * Así los resultados del motor (por ejemplo, las derivadas) salen legibles
- * sin pasos de limpieza aparte.</p>
+ * <ol>
+ *     <li><b>{@link #simplify(Expression)}</b>: simplificación completa. Agrupa
+ *     términos semejantes ({@code 2x + 3x = 5x}), aplica las leyes de los
+ *     exponentes ({@code x·x^2 = x^3}, {@code (x^2)^2 = x^4}), cancela factores
+ *     ({@code x/x = 1}), opera números con fracciones exactas, sustituye valores
+ *     conocidos ({@code sen(0) = 0}) y ordena los términos de mayor a menor
+ *     grado. Ver {@link Normalizer}.</li>
+ *     <li><b>Constructores</b> ({@link #sum}, {@link #product}…): simplifican solo
+ *     lo obvio al armar una expresión nueva (en lugar de {@code new Sum(a, b)} se
+ *     usa {@code Simplifier.sum(a, b)}, que devuelve {@code a} si {@code b} es 0).
+ *     Los usa el motor de derivadas para que el resultado sin simplificar ya sea
+ *     legible.</li>
+ * </ol>
  *
- * <p>Reglas aplicadas:</p>
+ * <p>Reglas de los constructores:</p>
  * <ul>
  *     <li>Neutros: {@code a + 0 = a}, {@code a·1 = a}, {@code a/1 = a}, {@code a^1 = a}.</li>
  *     <li>Absorbentes: {@code a·0 = 0}, {@code 0/a = 0}, {@code a^0 = 1}, {@code 1^a = 1}.</li>
@@ -29,6 +40,29 @@ public final class Simplifier {
     private static final Constant ONE = new Constant(1);
 
     private Simplifier() {
+    }
+
+    /**
+     * Simplificación completa.
+     */
+    public static Expression simplify(Expression expression) {
+        return simplify(expression, EnumSet.noneOf(SimplificationRule.class));
+    }
+
+    /**
+     * Simplificación completa que además informa qué tipos de simplificación
+     * se aplicaron, para explicarlos en el procedimiento.
+     *
+     * @param applied conjunto donde se agregan las reglas aplicadas
+     * @return la expresión simplificada; si algún número es demasiado grande
+     *         para operarlo de forma exacta, la expresión original
+     */
+    public static Expression simplify(Expression expression, Set<SimplificationRule> applied) {
+        try {
+            return new Normalizer(applied).simplify(expression);
+        } catch (ArithmeticException tooLarge) {
+            return expression;
+        }
     }
 
     public static Expression sum(Expression a, Expression b) {

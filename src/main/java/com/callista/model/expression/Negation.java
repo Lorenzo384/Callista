@@ -32,6 +32,16 @@ public final class Negation implements Expression {
         return UNARY;
     }
 
+    @Override
+    public boolean equals(Object other) {
+        return other instanceof Negation n && operand.equals(n.operand);
+    }
+
+    @Override
+    public int hashCode() {
+        return -operand.hashCode();
+    }
+
     /**
      * La potencia agrupa más fuerte que el signo: {@code -x^2} es {@code -(x^2)},
      * mientras que {@code -(x + 1)} y {@code -(-x)} necesitan paréntesis.
