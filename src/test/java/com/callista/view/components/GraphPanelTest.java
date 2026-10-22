@@ -1,6 +1,7 @@
 package com.callista.view.components;
 
 import com.callista.model.CalculatorModel;
+import com.callista.model.calculus.numeric.NumericalMethod;
 import com.callista.model.entity.Graph;
 import com.callista.model.exception.InvalidExpressionException;
 import com.callista.view.ColorPalette;
@@ -76,5 +77,15 @@ class GraphPanelTest {
 
         withGraph.clear();
         paint(withGraph);
+    }
+
+    @Test
+    void drawsIntegralAreasAndShapes() throws Exception {
+        for (NumericalMethod method : NumericalMethod.values()) {
+            GraphPanel panel = new GraphPanel();
+            panel.showGraph(model.approximateIntegral(model.interpret("sen(x) + 1"), 0, 3, method, 6)
+                    .getGraph().orElseThrow());
+            paint(panel);
+        }
     }
 }

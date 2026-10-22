@@ -25,8 +25,9 @@ class CalculatorModelTest {
     private final CalculatorModel model = new CalculatorModel();
 
     @Test
-    void supportsEvaluationAndDerivatives() {
-        assertEquals(Set.of(OperationType.EVALUATE, OperationType.DERIVATIVE), model.getSupportedOperations());
+    void supportsEvaluationDerivativesAndDefiniteIntegrals() {
+        assertEquals(Set.of(OperationType.EVALUATE, OperationType.DERIVATIVE, OperationType.DEFINITE_INTEGRAL),
+                model.getSupportedOperations());
     }
 
     @Test

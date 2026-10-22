@@ -2,8 +2,10 @@ package com.callista.view.components;
 
 import com.callista.model.entity.CurveStyle;
 import com.callista.model.entity.Graph;
+import com.callista.model.entity.GraphArea;
 import com.callista.model.entity.GraphCurve;
 import com.callista.model.entity.GraphPoint;
+import com.callista.model.entity.GraphPolygon;
 import com.callista.model.graph.FunctionSampler;
 import com.callista.model.graph.FunctionSampler.Sample;
 import com.callista.model.graph.NiceTicks;
@@ -36,10 +38,11 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.geom.Path2D;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.DoubleStream;
 
 /**
- * Pestaña «Gráfica»: dibuja las curvas y puntos de un {@link Graph} con ejes,
- * cuadrícula y leyenda.
+ * Pestaña «Gráfica»: dibuja las curvas, puntos, áreas y figuras de un
+ * {@link Graph} con ejes, cuadrícula y leyenda.
  *
  * <ul>
  *     <li><b>Rueda del ratón</b>: acercar o alejar alrededor del cursor.</li>
@@ -155,7 +158,11 @@ public class GraphPanel extends JPanel {
             return;
         }
         xView = graph.xRange();
-        double[] pointYs = graph.points().stream().mapToDouble(GraphPoint::y).toArray();
+        // Los puntos marcados y, si hay áreas sombreadas, el eje x deben quedar a la vista
+        double[] pointYs = DoubleStream.concat(
+                graph.points().stream().mapToDouble(GraphPoint::y),
+                graph.areas().isEmpty() ? DoubleStream.empty() : DoubleStream.of(0))
+                .toArray();
         yView = FunctionSampler.suggestYRange(
                 graph.curves().stream().map(GraphCurve::expression).toList(), xView, pointYs);
         repaint();
@@ -181,6 +188,12 @@ public class GraphPanel extends JPanel {
             drawGrid(g, plot);
             Graphics2D clipped = (Graphics2D) g.create();
             clipped.clip(plot);
+            for (GraphArea area : graph.areas()) {
+                drawArea(clipped, plot, area);
+            }
+            for (GraphPolygon polygon : graph.polygons()) {
+                drawPolygon(clipped, plot, polygon);
+            }
             for (GraphCurve curve : graph.curves()) {
                 drawCurve(clipped, plot, curve);
             }
@@ -263,6 +276,58 @@ public class GraphPanel extends JPanel {
     }
 
     /**
+     * Sombrea la región entre la curva y el eje x en [from, to]. Donde la
+     * función no existe, la región se interrumpe.
+     */
+    private void drawArea(Graphics2D g, Rectangle plot, GraphArea area) {
+        double from = Math.max(area.from(), xView.min());
+        double to = Math.min(area.to(), xView.max());
+        if (from >= to) {
+            return;
+        }
+        int count = Math.max(2, (int) Math.ceil((to - from) / xView.width() * plot.width));
+        List<Sample> samples = FunctionSampler.sample(area.function(), new Range(from, to), count);
+        double axis = clampPixel(toPixelY(0, plot), plot);
+        g.setColor(colors.area());
+        for (List<Sample> segment : FunctionSampler.segments(samples, Double.POSITIVE_INFINITY)) {
+            Path2D region = new Path2D.Double();
+            region.moveTo(toPixelX(segment.getFirst().x(), plot), axis);
+            for (Sample s : segment) {
+                region.lineTo(toPixelX(s.x(), plot), clampPixel(toPixelY(s.y(), plot), plot));
+            }
+            region.lineTo(toPixelX(segment.getLast().x(), plot), axis);
+            region.closePath();
+            g.fill(region);
+        }
+    }
+
+    /**
+     * Figura de un método numérico (rectángulo, trapecio o franja bajo una
+     * parábola): borde visible y relleno muy suave.
+     */
+    private void drawPolygon(Graphics2D g, Rectangle plot, GraphPolygon polygon) {
+        Path2D path = new Path2D.Double();
+        boolean first = true;
+        for (GraphPolygon.Vertex v : polygon.vertices()) {
+            double px = toPixelX(v.x(), plot);
+            double py = clampPixel(toPixelY(v.y(), plot), plot);
+            if (first) {
+                path.moveTo(px, py);
+                first = false;
+            } else {
+                path.lineTo(px, py);
+            }
+        }
+        path.closePath();
+        Color outline = colors.shape();
+        g.setColor(new Color(outline.getRed(), outline.getGreen(), outline.getBlue(), 28));
+        g.fill(path);
+        g.setColor(outline);
+        g.setStroke(new BasicStroke(1f));
+        g.draw(path);
+    }
+
+    /**
      * Marca los puntos con su etiqueta arriba a la derecha; si chocaría con
      * otra etiqueta, la pone debajo.
      */
@@ -302,10 +367,13 @@ public class GraphPanel extends JPanel {
         for (GraphCurve curve : graph.curves()) {
             width = Math.max(width, Math.min(maxTextWidth, metrics.stringWidth(curve.label())));
         }
+        for (GraphArea area : graph.areas()) {
+            width = Math.max(width, Math.min(maxTextWidth, metrics.stringWidth(area.label())));
+        }
         int x = plot.x + 6;
         int y = plot.y + 6;
         int boxWidth = sample + 10 + width + 8;
-        int boxHeight = lineHeight * graph.curves().size() + 6;
+        int boxHeight = lineHeight * (graph.curves().size() + graph.areas().size()) + 6;
         g.setColor(new Color(255, 255, 255, 225));
         g.fillRoundRect(x, y, boxWidth, boxHeight, 6, 6);
         g.setColor(colors.grid().darker());
@@ -320,6 +388,14 @@ public class GraphPanel extends JPanel {
             g.drawLine(x + 5, middle, x + 5 + sample, middle);
             g.setColor(colors.axis().darker());
             g.drawString(fit(curve.label(), metrics, maxTextWidth), x + sample + 12, baseline);
+            baseline += lineHeight;
+        }
+        for (GraphArea area : graph.areas()) {
+            int top = baseline - metrics.getAscent() + 2;
+            g.setColor(colors.area());
+            g.fillRect(x + 5, top, sample, metrics.getAscent() - 3);
+            g.setColor(colors.axis().darker());
+            g.drawString(fit(area.label(), metrics, maxTextWidth), x + sample + 12, baseline);
             baseline += lineHeight;
         }
     }

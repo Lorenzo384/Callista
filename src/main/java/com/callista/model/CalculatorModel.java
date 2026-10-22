@@ -1,6 +1,8 @@
 package com.callista.model;
 
 import com.callista.model.calculus.derivative.DerivativeCalculator;
+import com.callista.model.calculus.integral.DefiniteIntegral;
+import com.callista.model.calculus.numeric.NumericalMethod;
 import com.callista.model.entity.CalculationResult;
 import com.callista.model.entity.CurveStyle;
 import com.callista.model.entity.Graph;
@@ -9,6 +11,7 @@ import com.callista.model.entity.GraphPoint;
 import com.callista.model.entity.OperationType;
 import com.callista.model.entity.SolutionStep;
 import com.callista.model.exception.InvalidExpressionException;
+import com.callista.model.exception.ParameterException;
 import com.callista.model.expression.Constant;
 import com.callista.model.expression.Expression;
 import com.callista.model.expression.SimplificationRule;
@@ -39,11 +42,12 @@ public class CalculatorModel {
     public static final int MAX_DERIVATIVE_ORDER = 3;
 
     private static final Set<OperationType> SUPPORTED =
-            EnumSet.of(OperationType.EVALUATE, OperationType.DERIVATIVE);
+            EnumSet.of(OperationType.EVALUATE, OperationType.DERIVATIVE, OperationType.DEFINITE_INTEGRAL);
     private static final String[] ORDINALS = {"", "Primera", "Segunda", "Tercera"};
 
     private final ExpressionParser parser = new ExpressionParser();
     private final DerivativeCalculator derivativeCalculator = new DerivativeCalculator();
+    private final DefiniteIntegral definiteIntegral = new DefiniteIntegral();
 
     /**
      * Operaciones ya implementadas; el resto se muestran como «próximamente».
@@ -227,6 +231,27 @@ public class CalculatorModel {
             return parts.getFirst();
         }
         return String.join(", ", parts.subList(0, parts.size() - 1)) + " y " + parts.getLast();
+    }
+
+    /**
+     * Aproxima {@code ∫[a, b] f(x) dx} con un método numérico y explica cada paso.
+     *
+     * @param n número de subintervalos
+     * @throws ParameterException si {@code n} no es válido (por ejemplo, impar en Simpson)
+     */
+    public CalculationResult approximateIntegral(Expression function, double a, double b,
+                                                 NumericalMethod method, int n) throws ParameterException {
+        return definiteIntegral.approximate(function, a, b, method, n);
+    }
+
+    /**
+     * Aproxima {@code ∫[a, b] f(x) dx} con los tres métodos y los compara.
+     *
+     * @throws ParameterException si {@code n} no es válido
+     */
+    public CalculationResult compareIntegrationMethods(Expression function, double a, double b, int n)
+            throws ParameterException {
+        return definiteIntegral.compare(function, a, b, n);
     }
 
     /** {@code f(x)}, {@code f'(x)}, {@code f''(x)}… */

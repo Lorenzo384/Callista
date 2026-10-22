@@ -63,4 +63,17 @@ public final class FormatUtils {
         }
         return rounded.toString().replace("E+", "E");
     }
+
+    private static final String SUBSCRIPT_DIGITS = "₀₁₂₃₄₅₆₇₈₉";
+
+    /**
+     * Índice en subíndice para escribir {@code x₀}, {@code x₁₂}.
+     */
+    public static String subscript(int index) {
+        StringBuilder result = new StringBuilder();
+        for (char digit : Integer.toString(index).toCharArray()) {
+            result.append(digit == '-' ? '₋' : SUBSCRIPT_DIGITS.charAt(digit - '0'));
+        }
+        return result.toString();
+    }
 }

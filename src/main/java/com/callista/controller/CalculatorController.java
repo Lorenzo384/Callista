@@ -29,7 +29,8 @@ public class CalculatorController {
         this.model = model;
         this.operations = Map.of(
                 OperationType.EVALUATE, new EvaluationController(view, model),
-                OperationType.DERIVATIVE, new DerivativeController(view, model));
+                OperationType.DERIVATIVE, new DerivativeController(view, model),
+                OperationType.DEFINITE_INTEGRAL, new IntegralController(view, model));
 
         view.setOperations(OperationType.values(), model.getSupportedOperations());
         view.onOperationChanged(this::changeOperation);

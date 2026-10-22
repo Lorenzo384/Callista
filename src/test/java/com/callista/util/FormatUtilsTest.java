@@ -1,5 +1,6 @@
 package com.callista.util;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -43,5 +44,12 @@ class FormatUtilsTest {
     })
     void formatsShortNumbersForLabels(double value, String expected) {
         assertEquals(expected, FormatUtils.formatShort(value));
+    }
+
+    @Test
+    void writesSubscripts() {
+        assertEquals("₀", FormatUtils.subscript(0));
+        assertEquals("₁₂", FormatUtils.subscript(12));
+        assertEquals("₁₀₀₀₀", FormatUtils.subscript(10000));
     }
 }
