@@ -19,9 +19,10 @@ import java.util.Objects;
  * @param xRange   intervalo de x inicial
  * @param areas    regiones sombreadas bajo una curva
  * @param polygons figuras auxiliares, como los trapecios de un método numérico
+ * @param lines    rectas verticales, como un eje de giro x = k
  */
 public record Graph(List<GraphCurve> curves, List<GraphPoint> points, Range xRange,
-                    List<GraphArea> areas, List<GraphPolygon> polygons) {
+                    List<GraphArea> areas, List<GraphPolygon> polygons, List<GraphLine> lines) {
 
     public Graph {
         curves = List.copyOf(curves);
@@ -29,12 +30,21 @@ public record Graph(List<GraphCurve> curves, List<GraphPoint> points, Range xRan
         Objects.requireNonNull(xRange, "xRange");
         areas = List.copyOf(areas);
         polygons = List.copyOf(polygons);
+        lines = List.copyOf(lines);
+    }
+
+    /**
+     * Gráfica sin rectas verticales.
+     */
+    public Graph(List<GraphCurve> curves, List<GraphPoint> points, Range xRange,
+                 List<GraphArea> areas, List<GraphPolygon> polygons) {
+        this(curves, points, xRange, areas, polygons, List.of());
     }
 
     /**
      * Gráfica solo con curvas y puntos.
      */
     public Graph(List<GraphCurve> curves, List<GraphPoint> points, Range xRange) {
-        this(curves, points, xRange, List.of(), List.of());
+        this(curves, points, xRange, List.of(), List.of(), List.of());
     }
 }

@@ -4,6 +4,8 @@ import com.callista.model.calculus.area.AreaBetweenCurves;
 import com.callista.model.calculus.derivative.DerivativeCalculator;
 import com.callista.model.calculus.integral.DefiniteIntegral;
 import com.callista.model.calculus.integral.IndefiniteIntegral;
+import com.callista.model.calculus.revolution.RotationAxis;
+import com.callista.model.calculus.revolution.SolidOfRevolution;
 import com.callista.model.calculus.numeric.NumericalMethod;
 import com.callista.model.entity.CalculationResult;
 import com.callista.model.entity.CurveStyle;
@@ -47,7 +49,7 @@ public class CalculatorModel {
     private static final Set<OperationType> SUPPORTED =
             EnumSet.of(OperationType.EVALUATE, OperationType.DERIVATIVE,
                     OperationType.INDEFINITE_INTEGRAL, OperationType.DEFINITE_INTEGRAL,
-                    OperationType.AREA_BETWEEN_CURVES);
+                    OperationType.AREA_BETWEEN_CURVES, OperationType.SOLID_OF_REVOLUTION);
     private static final String[] ORDINALS = {"", "Primera", "Segunda", "Tercera"};
 
     private final ExpressionParser parser = new ExpressionParser();
@@ -55,6 +57,7 @@ public class CalculatorModel {
     private final DefiniteIntegral definiteIntegral = new DefiniteIntegral();
     private final IndefiniteIntegral indefiniteIntegral = new IndefiniteIntegral();
     private final AreaBetweenCurves areaBetweenCurves = new AreaBetweenCurves();
+    private final SolidOfRevolution solidOfRevolution = new SolidOfRevolution();
 
     /**
      * Operaciones ya implementadas; el resto se muestran como «próximamente».
@@ -331,6 +334,25 @@ public class CalculatorModel {
     public CalculationResult areaBetween(Expression f, Expression g, Expression a, Expression b)
             throws ParameterException {
         return areaBetweenCurves.between(f, g, a, b);
+    }
+
+    /**
+     * Volumen al girar alrededor de {@code axis} la región que encierran f y g.
+     *
+     * @throws ParameterException si no encierran una región o el eje la atraviesa
+     */
+    public CalculationResult enclosedVolume(Expression f, Expression g, RotationAxis axis) throws ParameterException {
+        return solidOfRevolution.enclosed(f, g, axis);
+    }
+
+    /**
+     * Volumen al girar alrededor de {@code axis} la región entre f y g en [a, b].
+     *
+     * @throws ParameterException si a no es menor que b, o si el eje vertical atraviesa la región
+     */
+    public CalculationResult volumeBetween(Expression f, Expression g, Expression a, Expression b, RotationAxis axis)
+            throws ParameterException {
+        return solidOfRevolution.between(f, g, a, b, axis);
     }
 
     /**
