@@ -33,4 +33,15 @@ class FormatUtilsTest {
     void formatsSpecialValues(double value, String expected) {
         assertEquals(expected, FormatUtils.formatNumber(value));
     }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "1.0471975511965976  | 1.047",
+            "0.8660254037844386  | 0.866",
+            "12.909297426825681  | 12.91",
+            "2                   | 2",
+    })
+    void formatsShortNumbersForLabels(double value, String expected) {
+        assertEquals(expected, FormatUtils.formatShort(value));
+    }
 }

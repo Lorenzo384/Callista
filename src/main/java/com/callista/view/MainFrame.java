@@ -1,5 +1,6 @@
 package com.callista.view;
 
+import com.callista.model.entity.Graph;
 import com.callista.model.entity.OperationType;
 import com.callista.view.components.ActionPanel;
 import com.callista.view.components.GraphPanel;
@@ -123,6 +124,7 @@ public class MainFrame extends JFrame {
         setJMenuBar(createMenuBar(palette));
         actionPanel.makeCalculateDefault(getRootPane());
         resultPanel.setColors(palette.getResultBackground(), palette.getResultForeground());
+        graphPanel.setColors(palette.getGraphColors());
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setMinimumSize(new Dimension(400, 700));
         setSize(440, 780);
@@ -232,15 +234,27 @@ public class MainFrame extends JFrame {
 
     // ------------------------------------------------------------ resultado
 
+    /**
+     * Muestra el resultado y el procedimiento. Se conserva la pestaña que el
+     * usuario tenga abierta (Procedimiento o Gráfica).
+     */
     public void showResult(String summary, List<SolutionStep> steps) {
         resultPanel.showResult(summary);
         stepsPanel.showSteps(steps);
-        bottomTabs.setSelectedComponent(stepsPanel);
+    }
+
+    public void showGraph(Graph graph) {
+        graphPanel.showGraph(graph);
+    }
+
+    public void clearGraph() {
+        graphPanel.clear();
     }
 
     public void clearResult() {
         resultPanel.clear();
         stepsPanel.clear();
+        graphPanel.clear();
     }
 
     /**
@@ -301,6 +315,7 @@ public class MainFrame extends JFrame {
         palette.install();
         FlatLaf.updateUI();
         resultPanel.setColors(palette.getResultBackground(), palette.getResultForeground());
+        graphPanel.setColors(palette.getGraphColors());
         palette.save(ColorPalette.userPreferences());
     }
 

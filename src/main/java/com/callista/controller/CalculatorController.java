@@ -84,6 +84,7 @@ public class CalculatorController {
         Optional<CalculationResult> result = operations.get(operation).calculate(function);
         if (result.isPresent()) {
             view.showResult(result.get().getSummary(), result.get().getSteps());
+            result.get().getGraph().ifPresentOrElse(view::showGraph, view::clearGraph);
             view.setStatus("Listo");
         } else {
             view.clearResult();

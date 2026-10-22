@@ -28,6 +28,9 @@ import java.util.Set;
  */
 final class Normalizer {
 
+    /** Denominador máximo de un coeficiente que se escribe como fracción. */
+    private static final long MAX_FRACTION_DENOMINATOR = 1000;
+
     /** Diferencia máxima para reconocer un valor exacto: sen(π) da 1.2e-16 y no 0. */
     private static final double KNOWN_VALUE_TOLERANCE = 1e-12;
 
@@ -391,15 +394,22 @@ final class Normalizer {
                     }
                 });
 
-        long top = Math.absExact(c.getNumerator());
-        if (top != 1 || numerator.isEmpty()) {
-            numerator.addFirst(new Constant(top));
+        // Fracciones «de clase» (1/3, 5/6) se escriben como fracción; las que
+        // vienen de decimales largos (5403/10000) se escriben como decimal.
+        boolean asDecimal = c.getDenominator() > MAX_FRACTION_DENOMINATOR;
+        if (asDecimal) {
+            numerator.addFirst(new Constant(Math.abs(c.doubleValue())));
+        } else {
+            long top = Math.absExact(c.getNumerator());
+            if (top != 1 || numerator.isEmpty()) {
+                numerator.addFirst(new Constant(top));
+            }
         }
         if (c.signum() < 0) {
             Expression first = numerator.getFirst();
             numerator.set(0, first instanceof Constant k ? new Constant(-k.getValue()) : new Negation(first));
         }
-        if (c.getDenominator() != 1) {
+        if (!asDecimal && c.getDenominator() != 1) {
             denominator.addFirst(new Constant(c.getDenominator()));
         }
         Expression result = productOf(numerator);

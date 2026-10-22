@@ -61,6 +61,7 @@ class SimplifyTest {
             "pi*x*2                 | 2*π*x",
             "x^-2                   | 1/x^2",
             "-(x+1)                 | -x - 1",
+            "0.5403023059*x + 1     | 0.5403023059*x + 1",
     })
     void simplifiesToTextbookForm(String input, String expected) throws InvalidExpressionException {
         assertEquals(expected, simplify(input));

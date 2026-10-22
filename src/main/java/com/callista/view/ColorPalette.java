@@ -36,11 +36,15 @@ public enum ColorPalette {
             entry("Button.default.borderColor", "#B79BDB"),
             entry("Button.default.hoverBackground", "#CDB6EB"),
             entry("Button.default.pressedBackground", "#EDB8D6")),
-            new Color(0xFBEAF3), new Color(0x8A2F66)),
+            new Color(0xFBEAF3), new Color(0x8A2F66),
+            new GraphColors(new Color(0x5E4386), new Color(0xC2689E), new Color(0x9C7BCB), new Color(0x8A2F66),
+                    new Color(0xECE6F4), new Color(0x6E6680), Color.WHITE)),
 
     FORMAL_GRAY("Gris formal", Map.of(
             "@accentColor", "#5A5A5A"),
-            null, null);
+            null, null,
+            new GraphColors(new Color(0x222222), new Color(0x6B6B6B), new Color(0x8C8C8C), new Color(0x222222),
+                    new Color(0xE6E6E6), new Color(0x555555), Color.WHITE));
 
     /** Paleta con la que se abre la aplicación la primera vez. */
     public static final ColorPalette DEFAULT = PASTEL_PURPLE;
@@ -51,13 +55,15 @@ public enum ColorPalette {
     private final Map<String, String> lookAndFeelDefaults;
     private final Color resultBackground;
     private final Color resultForeground;
+    private final GraphColors graphColors;
 
     ColorPalette(String displayName, Map<String, String> lookAndFeelDefaults,
-                 Color resultBackground, Color resultForeground) {
+                 Color resultBackground, Color resultForeground, GraphColors graphColors) {
         this.displayName = displayName;
         this.lookAndFeelDefaults = lookAndFeelDefaults;
         this.resultBackground = resultBackground;
         this.resultForeground = resultForeground;
+        this.graphColors = graphColors;
     }
 
     public String getDisplayName() {
@@ -85,6 +91,13 @@ public enum ColorPalette {
      */
     public Color getResultForeground() {
         return resultForeground;
+    }
+
+    /**
+     * Colores de la gráfica.
+     */
+    public GraphColors getGraphColors() {
+        return graphColors;
     }
 
     /**
