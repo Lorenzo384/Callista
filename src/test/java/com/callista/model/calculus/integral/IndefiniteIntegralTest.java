@@ -107,9 +107,9 @@ class IndefiniteIntegralTest {
         assertTrue(compared >= 3, text + ": muy pocos puntos comparados");
     }
 
-    /** Sin antiderivada elemental, o requieren por partes (bocado 10). */
+    /** Sin antiderivada elemental, o requieren técnicas fuera del temario. */
     @ParameterizedTest
-    @ValueSource(strings = {"e^(-x^2)", "sen(x)/x", "sen(x^2)", "x*e^x", "ln(x)", "1/ln(x)"})
+    @ValueSource(strings = {"e^(-x^2)", "sen(x)/x", "sen(x^2)", "1/ln(x)", "e^x/x", "x*arctan(x)"})
     void reportsWhatItCannotIntegrate(String text) {
         UnsupportedIntegralException error = assertThrows(UnsupportedIntegralException.class,
                 () -> integral.antiderivative(f(text)));

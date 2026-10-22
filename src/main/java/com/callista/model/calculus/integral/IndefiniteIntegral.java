@@ -3,6 +3,7 @@ package com.callista.model.calculus.integral;
 import com.callista.model.calculus.derivative.DerivativeCalculator;
 import com.callista.model.calculus.integral.technique.AlgebraicExpansion;
 import com.callista.model.calculus.integral.technique.DirectIntegration;
+import com.callista.model.calculus.integral.technique.IntegrationByParts;
 import com.callista.model.calculus.integral.technique.IntegrationContext;
 import com.callista.model.calculus.integral.technique.IntegrationRule;
 import com.callista.model.calculus.integral.technique.IntegrationTechnique;
@@ -33,8 +34,8 @@ import static com.callista.model.expression.Simplifier.sum;
  *
  * <p>Primero aplica lo que vale para cualquier integral: linealidad (separar
  * sumas y restas) y múltiplo constante (sacar las constantes). Después prueba
- * las técnicas en orden: integrales inmediatas, sustitución y desarrollar el
- * producto. Cada técnica que no funciona deshace sus pasos y se prueba la
+ * las técnicas en orden: integrales inmediatas, sustitución, por partes y
+ * desarrollar el producto. Cada técnica que no funciona deshace sus pasos y se prueba la
  * siguiente.</p>
  *
  * <p>El resultado se comprueba derivándolo con {@link DerivativeCalculator}.</p>
@@ -47,7 +48,7 @@ public class IndefiniteIntegral {
     private static final double[] CHECK_POINTS = {0.37, 0.81, 1.29, 1.93, 2.48, -0.53, -1.71};
 
     private final List<IntegrationTechnique> techniques = List.of(
-            new DirectIntegration(), new SubstitutionMethod(), new AlgebraicExpansion());
+            new DirectIntegration(), new SubstitutionMethod(), new IntegrationByParts(), new AlgebraicExpansion());
     private final DerivativeCalculator derivatives = new DerivativeCalculator();
 
     /**
@@ -67,7 +68,7 @@ public class IndefiniteIntegral {
      */
     public Expression antiderivative(Expression f, List<SolutionStep> steps, int baseLevel)
             throws UnsupportedIntegralException {
-        return Simplifier.simplify(new Integration(steps, "x", 0).integrate(f, baseLevel));
+        return Simplifier.simplify(new Integration(steps, "x", 0).integrateHere(f, baseLevel));
     }
 
     /**
@@ -149,8 +150,17 @@ public class IndefiniteIntegral {
             return variable;
         }
 
+        /**
+         * Una integral anidada (cada término de una suma, la v de partes, la
+         * integral en u…): cuenta un nivel más de profundidad, para que una
+         * técnica que genera integrales cada vez peores termine.
+         */
         @Override
         public Expression integrate(Expression integrand, int level) throws UnsupportedIntegralException {
+            return new Integration(steps, variable, depth + 1).integrateHere(integrand, level);
+        }
+
+        private Expression integrateHere(Expression integrand, int level) throws UnsupportedIntegralException {
             if (depth > MAX_DEPTH) {
                 throw unsupported(integrand);
             }
@@ -238,7 +248,7 @@ public class IndefiniteIntegral {
 
         private UnsupportedIntegralException unsupported(Expression f) {
             return new UnsupportedIntegralException("No se encontró una antiderivada de " + f
-                    + " con las técnicas disponibles (integrales inmediatas, sustitución y desarrollar el producto). "
+                    + " con las técnicas disponibles (integrales inmediatas, sustitución, por partes y desarrollar el producto). "
                     + "Puede que no tenga antiderivada elemental, como e^(-x^2) o sin(x)/x.");
         }
 

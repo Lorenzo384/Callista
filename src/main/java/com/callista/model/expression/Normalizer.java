@@ -400,7 +400,8 @@ final class Normalizer {
      * Arma la suma: términos de mayor a menor grado en x y las constantes al
      * final ({@code 3*x^2 - 4 + 1/x}); los negativos se escriben como resta.
      * Si la suma empezaría con un término negativo, se adelanta uno positivo
-     * del mismo grado: {@code 1 - ln(x)} en lugar de {@code -ln(x) + 1}.
+     * del mismo grado ({@code x*ln(x) - x} en lugar de {@code -x + x*ln(x)}) o,
+     * en un binomio, la constante ({@code 1 - x^2}).
      */
     private Expression build(List<Term> terms) {
         if (terms.isEmpty()) {
@@ -410,6 +411,11 @@ final class Normalizer {
                 .sorted(Comparator.comparingDouble((Term t) -> -degree(t))
                         .thenComparingInt(t -> t.dependsOnVariable() ? 0 : 1))
                 .toList());
+        // Binomio con constante positiva: 1 - x^2 en lugar de -x^2 + 1
+        if (ordered.size() == 2 && ordered.getFirst().coefficient().signum() < 0
+                && ordered.get(1).coefficient().signum() > 0 && !ordered.get(1).dependsOnVariable()) {
+            ordered.add(ordered.removeFirst());
+        }
         if (ordered.getFirst().coefficient().signum() < 0) {
             double leadingDegree = degree(ordered.getFirst());
             ordered.stream()
@@ -434,22 +440,18 @@ final class Normalizer {
     }
 
     /**
-     * Grado del término si es polinómico ({@code 3*x^2} → 2, {@code 1/x} → -1);
-     * 0 si no tiene x o si tiene otras funciones ({@code x*cos(x)}), que así
-     * conservan el orden en que aparecieron.
+     * Grado del término según su potencia de x: {@code 3*x^2} → 2,
+     * {@code x*ln(x)} → 1, {@code 1/x} → -1, {@code sin(x)} → 0. Los términos
+     * del mismo grado conservan el orden en que aparecieron.
      */
     private static double degree(Term term) {
-        double degree = 0;
         for (Map.Entry<Expression, Expression> factor : term.factors().entrySet()) {
-            Expression base = factor.getKey();
             Optional<Fraction> exponent = numeric(factor.getValue());
-            if (base instanceof Variable && exponent.isPresent()) {
-                degree = exponent.get().doubleValue();
-            } else if (base.dependsOnVariable() || factor.getValue().dependsOnVariable()) {
-                return 0;
+            if (factor.getKey() instanceof Variable && exponent.isPresent()) {
+                return exponent.get().doubleValue();
             }
         }
-        return degree;
+        return 0;
     }
 
     /**

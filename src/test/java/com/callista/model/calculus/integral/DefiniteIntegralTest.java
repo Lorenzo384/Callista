@@ -110,6 +110,9 @@ class DefiniteIntegralTest {
             "1/x          | 1 | 2        | ∫[1, 2] f(x) dx = ln(2) ≈ 0.6931471806",
             "x*cos(x^2)   | 0 | sqrt(pi) | ∫[0, sqrt(π)] f(x) dx = 0",
             "3x^2 + 1     | 2 | 0        | ∫[2, 0] f(x) dx = -10",
+            "x*e^x        | 0 | 1        | ∫[0, 1] f(x) dx = 1",
+            "ln(x)        | 1 | e        | ∫[1, e] f(x) dx = 1",
+            "x*sen(x)     | 0 | pi       | ∫[0, π] f(x) dx = π ≈ 3.141592654",
     })
     void computesExactValuesWithTheFundamentalTheorem(String function, String a, String b, String expected)
             throws InvalidExpressionException {
