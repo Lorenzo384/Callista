@@ -4,6 +4,7 @@ import com.callista.model.entity.CurveStyle;
 import com.callista.model.entity.Graph;
 import com.callista.model.entity.GraphArea;
 import com.callista.model.entity.GraphCurve;
+import com.callista.model.entity.GraphLine;
 import com.callista.model.entity.GraphPoint;
 import com.callista.model.entity.GraphPolygon;
 import com.callista.model.graph.FunctionSampler;
@@ -158,10 +159,16 @@ public class GraphPanel extends JPanel {
             return;
         }
         xView = graph.xRange();
-        // Los puntos marcados y, si hay áreas sombreadas, el eje x deben quedar a la vista
-        double[] pointYs = DoubleStream.concat(
-                graph.points().stream().mapToDouble(GraphPoint::y),
-                graph.areas().isEmpty() ? DoubleStream.empty() : DoubleStream.of(0))
+        // Los puntos marcados y, si hay áreas limitadas por el eje x, el eje deben quedar a la vista
+        boolean showAxis = graph.areas().stream().anyMatch(GraphArea::touchesXAxis);
+        // También los vértices de las figuras, como el rectángulo reflejado de un volumen
+        DoubleStream polygonYs = graph.polygons().stream()
+                .flatMap(polygon -> polygon.vertices().stream())
+                .mapToDouble(GraphPolygon.Vertex::y)
+                .filter(Double::isFinite);
+        double[] pointYs = DoubleStream.concat(DoubleStream.concat(
+                        graph.points().stream().mapToDouble(GraphPoint::y),
+                        showAxis ? DoubleStream.of(0) : DoubleStream.empty()), polygonYs)
                 .toArray();
         yView = FunctionSampler.suggestYRange(
                 graph.curves().stream().map(GraphCurve::expression).toList(), xView, pointYs);
@@ -196,6 +203,12 @@ public class GraphPanel extends JPanel {
             }
             for (GraphCurve curve : graph.curves()) {
                 drawCurve(clipped, plot, curve);
+            }
+            for (GraphLine line : graph.lines()) {
+                double px = toPixelX(line.x(), plot);
+                clipped.setColor(colors.tangent());
+                clipped.setStroke(TANGENT_STROKE);
+                clipped.draw(new java.awt.geom.Line2D.Double(px, plot.y, px, plot.y + plot.height));
             }
             drawPoints(clipped, plot);
             clipped.dispose();
@@ -276,8 +289,9 @@ public class GraphPanel extends JPanel {
     }
 
     /**
-     * Sombrea la región entre la curva y el eje x en [from, to]. Donde la
-     * función no existe, la región se interrumpe.
+     * Sombrea la región entre las dos curvas en [from, to]: avanza por la
+     * curva de arriba y regresa por la de abajo. Donde alguna de las dos no
+     * existe, la región se interrumpe.
      */
     private void drawArea(Graphics2D g, Rectangle plot, GraphArea area) {
         double from = Math.max(area.from(), xView.min());
@@ -286,19 +300,43 @@ public class GraphPanel extends JPanel {
             return;
         }
         int count = Math.max(2, (int) Math.ceil((to - from) / xView.width() * plot.width));
-        List<Sample> samples = FunctionSampler.sample(area.function(), new Range(from, to), count);
-        double axis = clampPixel(toPixelY(0, plot), plot);
+        Range range = new Range(from, to);
+        List<Sample> upper = FunctionSampler.sample(area.upper(), range, count);
+        List<Sample> lower = FunctionSampler.sample(area.lower(), range, count);
         g.setColor(colors.area());
-        for (List<Sample> segment : FunctionSampler.segments(samples, Double.POSITIVE_INFINITY)) {
-            Path2D region = new Path2D.Double();
-            region.moveTo(toPixelX(segment.getFirst().x(), plot), axis);
-            for (Sample s : segment) {
-                region.lineTo(toPixelX(s.x(), plot), clampPixel(toPixelY(s.y(), plot), plot));
+        Path2D region = new Path2D.Double();
+        List<Sample> back = new ArrayList<>();
+        for (int i = 0; i < upper.size(); i++) {
+            Sample top = upper.get(i);
+            Sample bottom = lower.get(i);
+            if (!Double.isFinite(top.y()) || !Double.isFinite(bottom.y())) {
+                closeRegion(g, plot, region, back);
+                region = new Path2D.Double();
+                continue;
             }
-            region.lineTo(toPixelX(segment.getLast().x(), plot), axis);
-            region.closePath();
-            g.fill(region);
+            double px = toPixelX(top.x(), plot);
+            double py = clampPixel(toPixelY(top.y(), plot), plot);
+            if (back.isEmpty()) {
+                region.moveTo(px, py);
+            } else {
+                region.lineTo(px, py);
+            }
+            back.add(bottom);
         }
+        closeRegion(g, plot, region, back);
+    }
+
+    /** Termina un tramo de región regresando por la curva de abajo y lo rellena. */
+    private void closeRegion(Graphics2D g, Rectangle plot, Path2D region, List<Sample> back) {
+        if (back.isEmpty()) {
+            return;
+        }
+        for (Sample s : back.reversed()) {
+            region.lineTo(toPixelX(s.x(), plot), clampPixel(toPixelY(s.y(), plot), plot));
+        }
+        region.closePath();
+        g.fill(region);
+        back.clear();
     }
 
     /**
@@ -367,13 +405,17 @@ public class GraphPanel extends JPanel {
         for (GraphCurve curve : graph.curves()) {
             width = Math.max(width, Math.min(maxTextWidth, metrics.stringWidth(curve.label())));
         }
-        for (GraphArea area : graph.areas()) {
-            width = Math.max(width, Math.min(maxTextWidth, metrics.stringWidth(area.label())));
+        for (GraphLine line : graph.lines()) {
+            width = Math.max(width, Math.min(maxTextWidth, metrics.stringWidth(line.label())));
+        }
+        List<String> areaLabels = graph.areas().stream().map(GraphArea::label).distinct().toList();
+        for (String label : areaLabels) {
+            width = Math.max(width, Math.min(maxTextWidth, metrics.stringWidth(label)));
         }
         int x = plot.x + 6;
         int y = plot.y + 6;
         int boxWidth = sample + 10 + width + 8;
-        int boxHeight = lineHeight * (graph.curves().size() + graph.areas().size()) + 6;
+        int boxHeight = lineHeight * (graph.curves().size() + graph.lines().size() + areaLabels.size()) + 6;
         g.setColor(new Color(255, 255, 255, 225));
         g.fillRoundRect(x, y, boxWidth, boxHeight, 6, 6);
         g.setColor(colors.grid().darker());
@@ -390,12 +432,21 @@ public class GraphPanel extends JPanel {
             g.drawString(fit(curve.label(), metrics, maxTextWidth), x + sample + 12, baseline);
             baseline += lineHeight;
         }
-        for (GraphArea area : graph.areas()) {
+        for (GraphLine line : graph.lines()) {
+            int middle = baseline - metrics.getAscent() / 2 + 1;
+            g.setColor(colors.tangent());
+            g.setStroke(TANGENT_STROKE);
+            g.drawLine(x + 5, middle, x + 5 + sample, middle);
+            g.setColor(colors.axis().darker());
+            g.drawString(fit(line.label(), metrics, maxTextWidth), x + sample + 12, baseline);
+            baseline += lineHeight;
+        }
+        for (String label : areaLabels) {
             int top = baseline - metrics.getAscent() + 2;
             g.setColor(colors.area());
             g.fillRect(x + 5, top, sample, metrics.getAscent() - 3);
             g.setColor(colors.axis().darker());
-            g.drawString(fit(area.label(), metrics, maxTextWidth), x + sample + 12, baseline);
+            g.drawString(fit(label, metrics, maxTextWidth), x + sample + 12, baseline);
             baseline += lineHeight;
         }
     }
@@ -465,7 +516,7 @@ public class GraphPanel extends JPanel {
     private Color colorOf(CurveStyle style) {
         return switch (style) {
             case FUNCTION -> colors.function();
-            case DERIVATIVE, ANTIDERIVATIVE -> colors.derivative();
+            case DERIVATIVE, ANTIDERIVATIVE, SECOND_FUNCTION -> colors.derivative();
             case TANGENT -> colors.tangent();
         };
     }
@@ -473,7 +524,7 @@ public class GraphPanel extends JPanel {
     private static Stroke strokeOf(CurveStyle style) {
         return switch (style) {
             case FUNCTION -> FUNCTION_STROKE;
-            case DERIVATIVE, ANTIDERIVATIVE -> DERIVATIVE_STROKE;
+            case DERIVATIVE, ANTIDERIVATIVE, SECOND_FUNCTION -> DERIVATIVE_STROKE;
             case TANGENT -> TANGENT_STROKE;
         };
     }

@@ -110,6 +110,9 @@ class DefiniteIntegralTest {
             "1/x          | 1 | 2        | ∫[1, 2] f(x) dx = ln(2) ≈ 0.6931471806",
             "x*cos(x^2)   | 0 | sqrt(pi) | ∫[0, sqrt(π)] f(x) dx = 0",
             "3x^2 + 1     | 2 | 0        | ∫[2, 0] f(x) dx = -10",
+            "x*e^x        | 0 | 1        | ∫[0, 1] f(x) dx = 1",
+            "ln(x)        | 1 | e        | ∫[1, e] f(x) dx = 1",
+            "x*sen(x)     | 0 | pi       | ∫[0, π] f(x) dx = π ≈ 3.141592654",
     })
     void computesExactValuesWithTheFundamentalTheorem(String function, String a, String b, String expected)
             throws InvalidExpressionException {
@@ -127,11 +130,11 @@ class DefiniteIntegralTest {
     }
 
     @Test
-    void refusesWhenTheFunctionIsNotContinuous() throws InvalidExpressionException {
-        // Aplicar F(b) - F(a) a 1/x² en [-1, 1] daría -2, que es falso
+    void treatsAnAsymptoteInsideAsAnImproperIntegral() throws InvalidExpressionException {
+        // Aplicar F(b) - F(a) a 1/x² en [-1, 1] daría -2, que es falso: la integral diverge
         CalculationResult result = exact("1/x^2", "-1", "1");
-        assertEquals("∫[-1, 1] f(x) dx: integral impropia", result.getSummary());
-        assertTrue(steps(result).getLast().contains("el Teorema Fundamental no se aplica"));
+        assertEquals("∫[-1, 1] f(x) dx diverge (∞)", result.getSummary());
+        assertTrue(steps(result).getLast().contains("diverge"));
     }
 
     @Test

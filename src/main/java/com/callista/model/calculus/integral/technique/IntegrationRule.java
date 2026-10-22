@@ -14,7 +14,9 @@ public enum IntegrationRule {
     TABLE("Integral inmediata", "tabla de integrales"),
     SUBSTITUTION("Sustitución", "∫f(g(x))·g'(x) dx = ∫f(u) du, con u = g(x)"),
     BACK_SUBSTITUTION("Regresar a la variable original", "u = g(x)"),
-    EXPANSION("Desarrollar el producto", "multiplicar para obtener una suma de términos");
+    EXPANSION("Desarrollar el producto", "multiplicar para obtener una suma de términos"),
+    BY_PARTS("Integración por partes", "∫u dv = u·v - ∫v du"),
+    CYCLIC_INTEGRAL("La integral original vuelve a aparecer", "I = A + m·I  ⇒  I = A/(1 - m)");
 
     private final String displayName;
     private final String formula;

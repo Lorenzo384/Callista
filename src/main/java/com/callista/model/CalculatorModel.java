@@ -1,8 +1,11 @@
 package com.callista.model;
 
+import com.callista.model.calculus.area.AreaBetweenCurves;
 import com.callista.model.calculus.derivative.DerivativeCalculator;
 import com.callista.model.calculus.integral.DefiniteIntegral;
 import com.callista.model.calculus.integral.IndefiniteIntegral;
+import com.callista.model.calculus.revolution.RotationAxis;
+import com.callista.model.calculus.revolution.SolidOfRevolution;
 import com.callista.model.calculus.numeric.NumericalMethod;
 import com.callista.model.entity.CalculationResult;
 import com.callista.model.entity.CurveStyle;
@@ -15,6 +18,7 @@ import com.callista.model.exception.InvalidExpressionException;
 import com.callista.model.exception.ParameterException;
 import com.callista.model.expression.Constant;
 import com.callista.model.expression.Expression;
+import com.callista.model.expression.Negation;
 import com.callista.model.expression.SimplificationRule;
 import com.callista.model.expression.Simplifier;
 import com.callista.model.expression.Variable;
@@ -44,13 +48,16 @@ public class CalculatorModel {
 
     private static final Set<OperationType> SUPPORTED =
             EnumSet.of(OperationType.EVALUATE, OperationType.DERIVATIVE,
-                    OperationType.INDEFINITE_INTEGRAL, OperationType.DEFINITE_INTEGRAL);
+                    OperationType.INDEFINITE_INTEGRAL, OperationType.DEFINITE_INTEGRAL,
+                    OperationType.AREA_BETWEEN_CURVES, OperationType.SOLID_OF_REVOLUTION);
     private static final String[] ORDINALS = {"", "Primera", "Segunda", "Tercera"};
 
     private final ExpressionParser parser = new ExpressionParser();
     private final DerivativeCalculator derivativeCalculator = new DerivativeCalculator();
     private final DefiniteIntegral definiteIntegral = new DefiniteIntegral();
     private final IndefiniteIntegral indefiniteIntegral = new IndefiniteIntegral();
+    private final AreaBetweenCurves areaBetweenCurves = new AreaBetweenCurves();
+    private final SolidOfRevolution solidOfRevolution = new SolidOfRevolution();
 
     /**
      * Operaciones ya implementadas; el resto se muestran como «próximamente».
@@ -65,7 +72,11 @@ public class CalculatorModel {
      * @throws InvalidExpressionException si el texto no es una expresión válida
      */
     public Expression interpret(String text) throws InvalidExpressionException {
-        return parser.parse(text);
+        Expression function = parser.parse(text);
+        if (function.contains(Constant.INFINITY)) {
+            throw new InvalidExpressionException("∞ solo se puede usar en los límites de una integral", 1);
+        }
+        return function;
     }
 
     /**
@@ -93,6 +104,24 @@ public class CalculatorModel {
                     "El valor debe ser un número real, por ejemplo 2, -1.5 o pi/2", 1);
         }
         return value;
+    }
+
+    /**
+     * Interpreta el límite de una integral: un número como en
+     * {@link #interpretConstant} o infinito ({@code inf}, {@code -inf}, {@code ∞}).
+     *
+     * @throws InvalidExpressionException si el texto no es válido o no es un
+     *                                    número real ni ±∞
+     */
+    public Expression interpretLimit(String text) throws InvalidExpressionException {
+        Expression value = parser.parse(text);
+        double number = value.evaluate(0);
+        boolean infinite = value.contains(Constant.INFINITY) && Double.isInfinite(number);
+        if (value.dependsOnVariable() || !(Double.isFinite(number) || infinite)) {
+            throw new InvalidExpressionException(
+                    "El límite debe ser un número real (2, -1.5, pi/2) o infinito (inf, -inf)", 1);
+        }
+        return infinite ? (number > 0 ? Constant.INFINITY : new Negation(Constant.INFINITY)) : value;
     }
 
     /**
@@ -255,9 +284,10 @@ public class CalculatorModel {
     }
 
     /**
-     * Integral definida exacta con el Teorema Fundamental del Cálculo.
+     * Integral definida exacta con el Teorema Fundamental del Cálculo; si es
+     * impropia, como límite (converge o diverge).
      *
-     * @param a límite inferior, sin evaluar (ver {@link #interpretConstant})
+     * @param a límite inferior, sin evaluar (ver {@link #interpretLimit})
      * @param b límite superior, sin evaluar
      */
     public CalculationResult exactIntegral(Expression function, Expression a, Expression b) {
@@ -283,6 +313,53 @@ public class CalculatorModel {
     public CalculationResult compareIntegrationMethods(Expression function, double a, double b, int n)
             throws ParameterException {
         return definiteIntegral.compare(function, a, b, n);
+    }
+
+    /**
+     * Área de la región encerrada por f y g, del primer al último punto de corte.
+     *
+     * @throws ParameterException si las curvas no encierran una región
+     */
+    public CalculationResult enclosedArea(Expression f, Expression g) throws ParameterException {
+        return areaBetweenCurves.enclosed(f, g);
+    }
+
+    /**
+     * Área entre f y g en [a, b], partiendo el intervalo en los puntos de corte.
+     *
+     * @param a límite inferior, sin evaluar (ver {@link #interpretConstant})
+     * @param b límite superior, sin evaluar
+     * @throws ParameterException si a no es menor que b, o si f y g son iguales
+     */
+    public CalculationResult areaBetween(Expression f, Expression g, Expression a, Expression b)
+            throws ParameterException {
+        return areaBetweenCurves.between(f, g, a, b);
+    }
+
+    /**
+     * Volumen al girar alrededor de {@code axis} la región que encierran f y g.
+     *
+     * @throws ParameterException si no encierran una región o el eje la atraviesa
+     */
+    public CalculationResult enclosedVolume(Expression f, Expression g, RotationAxis axis) throws ParameterException {
+        return solidOfRevolution.enclosed(f, g, axis);
+    }
+
+    /**
+     * Volumen al girar alrededor de {@code axis} la región entre f y g en [a, b].
+     *
+     * @throws ParameterException si a no es menor que b, o si el eje vertical atraviesa la región
+     */
+    public CalculationResult volumeBetween(Expression f, Expression g, Expression a, Expression b, RotationAxis axis)
+            throws ParameterException {
+        return solidOfRevolution.between(f, g, a, b, axis);
+    }
+
+    /**
+     * La curva g(x) = 0 (el eje x), para cuando no se escribe g.
+     */
+    public Expression xAxis() {
+        return AreaBetweenCurves.xAxis();
     }
 
     /** {@code f(x)}, {@code f'(x)}, {@code f''(x)}… */

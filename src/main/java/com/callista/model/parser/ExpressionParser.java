@@ -171,6 +171,9 @@ public class ExpressionParser {
         if (name.equals("e")) {
             return Constant.E;
         }
+        if (isInfinityName(name)) {
+            return Constant.INFINITY;
+        }
         Optional<MathFunction> function = MathFunction.fromName(name);
         if (function.isPresent()) {
             return parseFunctionCall(function.get(), token);
@@ -284,7 +287,12 @@ public class ExpressionParser {
     }
 
     private static boolean isConstantName(String name) {
-        return name.equalsIgnoreCase("pi") || name.equals("π") || name.equals("e");
+        return name.equalsIgnoreCase("pi") || name.equals("π") || name.equals("e") || isInfinityName(name);
+    }
+
+    /** {@code inf}, {@code infinito} o {@code ∞}. */
+    private static boolean isInfinityName(String name) {
+        return name.equalsIgnoreCase("inf") || name.equalsIgnoreCase("infinito") || name.equals("∞");
     }
 
     // ---------------------------------------------------------- navegación

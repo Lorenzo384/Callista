@@ -24,7 +24,7 @@
         </constraints>
         <properties>
           <text value="0"/>
-          <toolTipText value="Límite inferior de integración"/>
+          <toolTipText value="Límite inferior: número, pi/2 o -inf"/>
         </properties>
       </component>
       <component id="08b04" class="javax.swing.JLabel">
@@ -43,7 +43,7 @@
         </constraints>
         <properties>
           <text value="1"/>
-          <toolTipText value="Límite superior de integración"/>
+          <toolTipText value="Límite superior: número, pi/2 o inf"/>
         </properties>
       </component>
       <component id="08b06" class="javax.swing.JLabel">
@@ -95,7 +95,7 @@
           <focusable value="false"/>
           <lineWrap value="true"/>
           <opaque value="false"/>
-          <text value="a y b aceptan expresiones como pi/2. n solo se usa en los métodos numéricos."/>
+          <text value="a y b aceptan pi/2, inf o -inf (impropias, con Exacto). n es para los métodos numéricos."/>
           <wrapStyleWord value="true"/>
         </properties>
       </component>

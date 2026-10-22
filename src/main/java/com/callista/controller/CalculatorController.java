@@ -31,7 +31,9 @@ public class CalculatorController {
                 OperationType.EVALUATE, new EvaluationController(view, model),
                 OperationType.DERIVATIVE, new DerivativeController(view, model),
                 OperationType.INDEFINITE_INTEGRAL, new IndefiniteIntegralController(model),
-                OperationType.DEFINITE_INTEGRAL, new IntegralController(view, model));
+                OperationType.DEFINITE_INTEGRAL, new IntegralController(view, model),
+                OperationType.AREA_BETWEEN_CURVES, new AreaController(view, model),
+                OperationType.SOLID_OF_REVOLUTION, new RevolutionController(view, model));
 
         view.setOperations(OperationType.values(), model.getSupportedOperations());
         view.onOperationChanged(this::changeOperation);
@@ -87,6 +89,7 @@ public class CalculatorController {
         if (result.isPresent()) {
             view.showResult(result.get().getSummary(), result.get().getSteps());
             result.get().getGraph().ifPresentOrElse(view::showGraph, view::clearGraph);
+            result.get().getSolid().ifPresentOrElse(view::showSolid, view::clearSolid);
             view.setStatus("Listo");
         } else {
             view.clearResult();

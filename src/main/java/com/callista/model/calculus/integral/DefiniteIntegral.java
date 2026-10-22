@@ -52,17 +52,23 @@ public class DefiniteIntegral {
     private static final int FALLBACK_SUBINTERVALS = 1000;
 
     private final IndefiniteIntegral indefinite = new IndefiniteIntegral();
+    private final ImproperIntegral improper = new ImproperIntegral();
 
     /**
      * Calcula la integral de forma exacta con el Teorema Fundamental del
      * Cálculo: {@code ∫[a, b] f(x) dx = F(b) - F(a)}.
      *
      * <p>Los límites se reciben como expresiones para conservar el valor
-     * exacto: con {@code b = π} el resultado puede ser {@code π^3/3}.</p>
+     * exacto: con {@code b = π} el resultado puede ser {@code π^3/3}. Si un
+     * límite es infinito o f tiene una asíntota en el intervalo, se resuelve
+     * como integral impropia ({@link ImproperIntegral}).</p>
      */
     public CalculationResult exact(Expression f, Expression a, Expression b) {
         double av = a.evaluate(0);
         double bv = b.evaluate(0);
+        if (ImproperIntegral.isImproper(f, av, bv)) {
+            return improper.solve(f, a, b);
+        }
         String integral = "∫[" + a + ", " + b + "] f(x) dx";
         List<SolutionStep> steps = new ArrayList<>();
         steps.add(new SolutionStep("Función: f(x) = " + f));
@@ -70,9 +76,8 @@ public class DefiniteIntegral {
         OptionalDouble gap = firstDiscontinuity(f, Math.min(av, bv), Math.max(av, bv));
         if (gap.isPresent()) {
             steps.add(new SolutionStep("f(x) no está definida en x ≈ " + fmt(gap.getAsDouble()) + ", dentro de ["
-                    + a + ", " + b + "]. Como f no es continua en el intervalo, el Teorema Fundamental no se "
-                    + "aplica: es una integral impropia."));
-            return new CalculationResult(integral + ": integral impropia", steps,
+                    + a + ", " + b + "]: el intervalo sale del dominio de f y el Teorema Fundamental no se aplica."));
+            return new CalculationResult(integral + ": fuera del dominio", steps,
                     new Graph(List.of(curve(f)), List.of(), xRange(av, bv)));
         }
 

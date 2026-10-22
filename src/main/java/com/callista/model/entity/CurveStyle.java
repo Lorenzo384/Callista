@@ -13,5 +13,7 @@ public enum CurveStyle {
     /** Una antiderivada F(x) de la función: trazo discontinuo. */
     ANTIDERIVATIVE,
     /** Una recta auxiliar, como la tangente: trazo punteado. */
-    TANGENT
+    TANGENT,
+    /** La segunda función, g(x), en el área entre curvas: trazo discontinuo. */
+    SECOND_FUNCTION
 }
