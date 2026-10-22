@@ -54,6 +54,16 @@ public final class Constant implements Expression {
         return false;
     }
 
+    @Override
+    public Expression replace(Expression target, Expression replacement) {
+        return equals(target) ? replacement : this;
+    }
+
+    @Override
+    public boolean contains(Expression part) {
+        return equals(part);
+    }
+
     /**
      * Un número negativo se comporta como un signo negativo al escribirlo:
      * {@code (-2)^x} necesita paréntesis igual que {@code (-a)^x}.

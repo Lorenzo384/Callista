@@ -28,6 +28,16 @@ public final class Negation implements Expression {
     }
 
     @Override
+    public Expression replace(Expression target, Expression replacement) {
+        return equals(target) ? replacement : new Negation(operand.replace(target, replacement));
+    }
+
+    @Override
+    public boolean contains(Expression part) {
+        return equals(part) || operand.contains(part);
+    }
+
+    @Override
     public int precedence() {
         return UNARY;
     }

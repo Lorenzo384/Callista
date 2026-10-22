@@ -465,7 +465,7 @@ public class GraphPanel extends JPanel {
     private Color colorOf(CurveStyle style) {
         return switch (style) {
             case FUNCTION -> colors.function();
-            case DERIVATIVE -> colors.derivative();
+            case DERIVATIVE, ANTIDERIVATIVE -> colors.derivative();
             case TANGENT -> colors.tangent();
         };
     }
@@ -473,7 +473,7 @@ public class GraphPanel extends JPanel {
     private static Stroke strokeOf(CurveStyle style) {
         return switch (style) {
             case FUNCTION -> FUNCTION_STROKE;
-            case DERIVATIVE -> DERIVATIVE_STROKE;
+            case DERIVATIVE, ANTIDERIVATIVE -> DERIVATIVE_STROKE;
             case TANGENT -> TANGENT_STROKE;
         };
     }

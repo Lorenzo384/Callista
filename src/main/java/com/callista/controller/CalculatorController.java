@@ -30,6 +30,7 @@ public class CalculatorController {
         this.operations = Map.of(
                 OperationType.EVALUATE, new EvaluationController(view, model),
                 OperationType.DERIVATIVE, new DerivativeController(view, model),
+                OperationType.INDEFINITE_INTEGRAL, new IndefiniteIntegralController(model),
                 OperationType.DEFINITE_INTEGRAL, new IntegralController(view, model));
 
         view.setOperations(OperationType.values(), model.getSupportedOperations());

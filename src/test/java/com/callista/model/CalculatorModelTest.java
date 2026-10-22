@@ -26,8 +26,8 @@ class CalculatorModelTest {
 
     @Test
     void supportsEvaluationDerivativesAndDefiniteIntegrals() {
-        assertEquals(Set.of(OperationType.EVALUATE, OperationType.DERIVATIVE, OperationType.DEFINITE_INTEGRAL),
-                model.getSupportedOperations());
+        assertEquals(Set.of(OperationType.EVALUATE, OperationType.DERIVATIVE, OperationType.INDEFINITE_INTEGRAL,
+                OperationType.DEFINITE_INTEGRAL), model.getSupportedOperations());
     }
 
     @Test
@@ -188,5 +188,12 @@ class CalculatorModelTest {
         Graph graph = model.derive(model.interpret("x^3"), 2, 1).getGraph().orElseThrow();
         assertTrue(graph.curves().stream().noneMatch(c -> c.style() == CurveStyle.TANGENT));
         assertEquals(1, graph.points().size());
+    }
+
+    @Test
+    void keepsConstantsExact() throws InvalidExpressionException {
+        assertEquals("π/2", model.interpretConstant("pi/2").toString());
+        assertThrows(InvalidExpressionException.class, () -> model.interpretConstant("x + 1"));
+        assertThrows(InvalidExpressionException.class, () -> model.interpretConstant("ln(0)"));
     }
 }

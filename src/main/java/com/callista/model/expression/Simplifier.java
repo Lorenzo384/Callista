@@ -1,6 +1,8 @@
 package com.callista.model.expression;
 
 import java.util.EnumSet;
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -47,6 +49,38 @@ public final class Simplifier {
      */
     public static Expression simplify(Expression expression) {
         return simplify(expression, EnumSet.noneOf(SimplificationRule.class));
+    }
+
+    /**
+     * Los términos de la expresión ya simplificada: {@code 3*x^2 - sin(x)} da
+     * dos {@link Monomial}.
+     */
+    public static List<Monomial> terms(Expression expression) {
+        return new Normalizer(EnumSet.noneOf(SimplificationRule.class)).monomials(expression);
+    }
+
+    /**
+     * Valor exacto de una expresión numérica sencilla ({@code 3}, {@code -1},
+     * {@code 2/3}), o vacío si no lo es (por ejemplo {@code x} o {@code π}).
+     */
+    public static Optional<Fraction> numericValue(Expression expression) {
+        try {
+            return Normalizer.numeric(expression);
+        } catch (ArithmeticException tooLarge) {
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Simplifica y además desarrolla los productos y potencias enteras de
+     * sumas: {@code x*(x + 1) = x^2 + x}.
+     */
+    public static Expression expand(Expression expression) {
+        try {
+            return new Normalizer(EnumSet.noneOf(SimplificationRule.class)).expand(expression);
+        } catch (ArithmeticException tooLarge) {
+            return simplify(expression);
+        }
     }
 
     /**

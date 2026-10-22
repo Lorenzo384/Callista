@@ -11,7 +11,7 @@
       <grid id="06f02" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties/>
         <border type="none"/>
@@ -34,35 +34,43 @@
       </grid>
       <nested-form id="06f05" form-file="com/callista/view/components/InputPanel.form" binding="inputPanel">
         <constraints>
-          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
         </constraints>
       </nested-form>
-      <grid id="06f06" binding="parametersPanel" layout-manager="GridLayoutManager" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+      <grid id="06f06" binding="parametersPanel" layout-manager="GridLayoutManager" row-count="5" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="4" left="8" bottom="8" right="8"/>
         <constraints>
-          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties/>
         <border type="none" title="Parámetros"/>
         <children>
           <nested-form id="06f07" form-file="com/callista/view/panels/EvaluationPanel.form" binding="evaluationPanel">
             <constraints>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
           </nested-form>
           <nested-form id="06f08" form-file="com/callista/view/panels/DerivativePanel.form" binding="derivativePanel">
             <constraints>
-              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
           </nested-form>
           <nested-form id="06f09" form-file="com/callista/view/panels/IntegralPanel.form" binding="integralPanel">
             <constraints>
-              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
           </nested-form>
-          <component id="06f0a" class="javax.swing.JLabel" binding="unavailableLabel">
+          <component id="06f0a" class="javax.swing.JLabel" binding="noParametersLabel">
             <constraints>
               <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="Sin parámetros: se calcula ∫ f(x) dx + C."/>
+            </properties>
+          </component>
+          <component id="06f0b" class="javax.swing.JLabel" binding="unavailableLabel">
+            <constraints>
+              <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <text value="Esta operación estará disponible próximamente."/>
@@ -70,22 +78,22 @@
           </component>
         </children>
       </grid>
-      <nested-form id="06f0b" form-file="com/callista/view/components/KeypadPanel.form" binding="keypadPanel">
+      <nested-form id="06f0c" form-file="com/callista/view/components/KeypadPanel.form" binding="keypadPanel">
         <constraints>
-          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
         </constraints>
       </nested-form>
-      <nested-form id="06f0c" form-file="com/callista/view/components/ActionPanel.form" binding="actionPanel">
+      <nested-form id="06f0d" form-file="com/callista/view/components/ActionPanel.form" binding="actionPanel">
         <constraints>
-          <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+          <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
         </constraints>
       </nested-form>
-      <nested-form id="06f0d" form-file="com/callista/view/components/ResultPanel.form" binding="resultPanel">
+      <nested-form id="06f0e" form-file="com/callista/view/components/ResultPanel.form" binding="resultPanel">
         <constraints>
-          <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+          <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
         </constraints>
       </nested-form>
-      <tabbedpane id="06f0e" binding="bottomTabs">
+      <tabbedpane id="06f0f" binding="bottomTabs">
         <constraints>
           <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false">
             <preferred-size width="200" height="160"/>
@@ -94,13 +102,13 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="06f0f" class="com.callista.view.components.StepsPanel" binding="stepsPanel">
+          <component id="06f10" class="com.callista.view.components.StepsPanel" binding="stepsPanel">
             <constraints>
               <tabbedpane title="Procedimiento"/>
             </constraints>
             <properties/>
           </component>
-          <component id="06f10" class="com.callista.view.components.GraphPanel" binding="graphPanel">
+          <component id="06f11" class="com.callista.view.components.GraphPanel" binding="graphPanel">
             <constraints>
               <tabbedpane title="Gráfica"/>
             </constraints>
@@ -108,7 +116,7 @@
           </component>
         </children>
       </tabbedpane>
-      <component id="06f11" class="javax.swing.JLabel" binding="statusLabel">
+      <component id="06f12" class="javax.swing.JLabel" binding="statusLabel">
         <constraints>
           <grid row="7" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
         </constraints>

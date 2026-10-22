@@ -15,6 +15,11 @@ public final class Power extends BinaryOperation {
     }
 
     @Override
+    public BinaryOperation withOperands(Expression left, Expression right) {
+        return new Power(left, right);
+    }
+
+    @Override
     public int precedence() {
         return POWER;
     }

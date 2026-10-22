@@ -28,6 +28,9 @@ import java.util.Set;
  */
 final class Normalizer {
 
+    /** Potencia máxima de una suma que se desarrolla: (x + 1)^8. */
+    private static final int MAX_EXPANSION_POWER = 8;
+
     /** Denominador máximo de un coeficiente que se escribe como fracción. */
     private static final long MAX_FRACTION_DENOMINATOR = 1000;
 
@@ -44,9 +47,65 @@ final class Normalizer {
         return switch (e) {
             case Constant c -> c;
             case Variable v -> v;
-            case FunctionCall f -> simplifyFunction(f);
+            case FunctionCall f when f.getFunction() != MathFunction.SQRT -> simplifyFunction(f);
             default -> build(terms(e));
         };
+    }
+
+    /**
+     * Los términos de la expresión simplificada, para quien necesite analizar
+     * su forma (por ejemplo, el integrador).
+     */
+    List<Monomial> monomials(Expression e) {
+        return terms(e).stream().map(t -> new Monomial(t.coefficient(), t.factors())).toList();
+    }
+
+    /**
+     * Desarrolla los productos y potencias enteras de sumas:
+     * {@code x*(x + 1) = x^2 + x}, {@code (x + 1)^2 = x^2 + 2*x + 1}.
+     * Las sumas en el denominador no se tocan.
+     */
+    Expression expand(Expression e) {
+        List<Term> expanded = new ArrayList<>();
+        for (Term term : terms(e)) {
+            expanded.addAll(expandTerm(term));
+        }
+        return build(combine(expanded));
+    }
+
+    private List<Term> expandTerm(Term term) {
+        List<Term> partial = List.of(Term.number(term.coefficient()));
+        for (Map.Entry<Expression, Expression> factor : term.factors().entrySet()) {
+            Expression base = factor.getKey();
+            Optional<Fraction> n = numeric(factor.getValue());
+            boolean expandable = (base instanceof Sum || base instanceof Difference)
+                    && n.isPresent() && n.get().isInteger() && n.get().signum() > 0
+                    && n.get().getNumerator() <= MAX_EXPANSION_POWER;
+            if (expandable) {
+                List<Term> inner = terms(base);
+                for (long k = 0; k < n.get().getNumerator(); k++) {
+                    partial = multiplyAll(partial, inner);
+                }
+            } else {
+                partial = multiplyAll(partial, List.of(Term.factor(base, factor.getValue())));
+            }
+        }
+        return partial;
+    }
+
+    private List<Term> multiplyAll(List<Term> left, List<Term> right) {
+        List<Term> products = new ArrayList<>();
+        for (Term a : left) {
+            for (Term b : right) {
+                products.add(multiply(a, b));
+            }
+        }
+        return combine(products);
+    }
+
+    /** Arma la expresión de un término dado por su coeficiente y factores. */
+    static Expression buildMonomial(Fraction coefficient, Map<Expression, Expression> factors) {
+        return buildTerm(new Term(coefficient, new LinkedHashMap<>(factors)));
     }
 
     /**
@@ -159,6 +218,9 @@ final class Normalizer {
             case Power p -> power(p);
             case Sum s -> sumAsFactor(s);
             case Difference d -> sumAsFactor(d);
+            // √a se trata como a^(1/2): así √x·√x = x y √x·x = x^(3/2)
+            case FunctionCall f when f.getFunction() == MathFunction.SQRT ->
+                    power(new Power(f.getArgument(), new Quotient(new Constant(1), new Constant(2))));
             case FunctionCall f -> {
                 Expression simplified = simplifyFunction(f);
                 yield simplified instanceof Constant c && c.isNumber()
@@ -208,7 +270,25 @@ final class Normalizer {
                 factors.put(base, sum);
             }
         });
-        return new Term(a.coefficient().multiply(b.coefficient()), factors);
+        return withoutEvenAbsolutes(new Term(a.coefficient().multiply(b.coefficient()), factors));
+    }
+
+    /**
+     * Un valor absoluto con exponente par es la potencia del argumento:
+     * {@code |x|^2 = x^2}, {@code 1/|x|^2 = 1/x^2}.
+     */
+    private Term withoutEvenAbsolutes(Term t) {
+        for (Map.Entry<Expression, Expression> factor : t.factors().entrySet()) {
+            Optional<Fraction> n = numeric(factor.getValue());
+            if (factor.getKey() instanceof FunctionCall call && call.getFunction() == MathFunction.ABS
+                    && n.isPresent() && n.get().isInteger() && n.get().getNumerator() % 2 == 0) {
+                Map<Expression, Expression> rest = new LinkedHashMap<>(t.factors());
+                rest.remove(call);
+                applied.add(SimplificationRule.EXPONENT_LAWS);
+                return multiply(new Term(t.coefficient(), rest), raise(term(call.getArgument()), n.get().getNumerator()));
+            }
+        }
+        return t;
     }
 
     /**
@@ -269,7 +349,7 @@ final class Normalizer {
         } else if (!t.factors().isEmpty()) {
             applied.add(SimplificationRule.EXPONENT_LAWS); // x^0 = 1
         }
-        return new Term(t.coefficient().pow(n), factors);
+        return withoutEvenAbsolutes(new Term(t.coefficient().pow(n), factors));
     }
 
     // ------------------------------------------------------------ exponentes
@@ -281,7 +361,7 @@ final class Normalizer {
     /**
      * Valor exacto de un exponente numérico: {@code 2}, {@code -1}, {@code 1/3}.
      */
-    private static Optional<Fraction> numeric(Expression e) {
+    static Optional<Fraction> numeric(Expression e) {
         return switch (e) {
             case Constant c when c.isNumber() -> Optional.of(Fraction.fromDouble(c.getValue()));
             case Negation n -> numeric(n.getOperand()).map(Fraction::negate);
@@ -435,8 +515,15 @@ final class Normalizer {
         return 3;
     }
 
+    /** {@code base^exponent}; el exponente 1/2 se escribe como raíz: {@code sqrt(base)}. */
     private static Expression power(Expression base, Fraction exponent) {
-        return exponent.isOne() ? base : new Power(base, exponent.toExpression());
+        if (exponent.isOne()) {
+            return base;
+        }
+        if (exponent.equals(Fraction.of(1, 2))) {
+            return new FunctionCall(MathFunction.SQRT, base);
+        }
+        return new Power(base, exponent.toExpression());
     }
 
     private static Expression productOf(List<Expression> factors) {

@@ -10,6 +10,8 @@ public enum CurveStyle {
     FUNCTION,
     /** Una derivada de la función: trazo discontinuo. */
     DERIVATIVE,
+    /** Una antiderivada F(x) de la función: trazo discontinuo. */
+    ANTIDERIVATIVE,
     /** Una recta auxiliar, como la tangente: trazo punteado. */
     TANGENT
 }

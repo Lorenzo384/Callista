@@ -95,4 +95,49 @@ class DefiniteIntegralTest {
         assertTrue(compared.polygons().isEmpty());
         assertEquals(1, compared.areas().size());
     }
+
+    // ------------------------------------------------------------ exacta
+
+    private CalculationResult exact(String function, String a, String b) throws InvalidExpressionException {
+        return integral.exact(f(function), f(a), f(b));
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource(delimiter = '|', value = {
+            "x^2          | 0 | 1        | ∫[0, 1] f(x) dx = 1/3 ≈ 0.3333333333",
+            "x^2          | 0 | pi       | ∫[0, π] f(x) dx = π^3/3 ≈ 10.33542556",
+            "sen(x)       | 0 | pi       | ∫[0, π] f(x) dx = 2",
+            "1/x          | 1 | 2        | ∫[1, 2] f(x) dx = ln(2) ≈ 0.6931471806",
+            "x*cos(x^2)   | 0 | sqrt(pi) | ∫[0, sqrt(π)] f(x) dx = 0",
+            "3x^2 + 1     | 2 | 0        | ∫[2, 0] f(x) dx = -10",
+    })
+    void computesExactValuesWithTheFundamentalTheorem(String function, String a, String b, String expected)
+            throws InvalidExpressionException {
+        assertEquals(expected, exact(function, a, b).getSummary());
+    }
+
+    @Test
+    void explainsTheFundamentalTheorem() throws InvalidExpressionException {
+        List<String> steps = steps(exact("x^2", "0", "pi"));
+        assertTrue(steps.contains("Antiderivada: F(x) = x^3/3"));
+        assertTrue(steps.contains("Teorema Fundamental del Cálculo: ∫[a, b] f(x) dx = F(b) - F(a)"));
+        assertTrue(steps.contains("F(π) = π^3/3 ≈ 10.33542556"));
+        assertTrue(steps.getLast().startsWith("Comprobación numérica"));
+        assertTrue(steps.getLast().endsWith("✓"));
+    }
+
+    @Test
+    void refusesWhenTheFunctionIsNotContinuous() throws InvalidExpressionException {
+        // Aplicar F(b) - F(a) a 1/x² en [-1, 1] daría -2, que es falso
+        CalculationResult result = exact("1/x^2", "-1", "1");
+        assertEquals("∫[-1, 1] f(x) dx: integral impropia", result.getSummary());
+        assertTrue(steps(result).getLast().contains("el Teorema Fundamental no se aplica"));
+    }
+
+    @Test
+    void approximatesWhenThereIsNoAntiderivative() throws InvalidExpressionException {
+        CalculationResult result = exact("e^(-x^2)", "0", "1");
+        assertEquals("∫[0, 1] f(x) dx ≈ 0.7468241328", result.getSummary());
+        assertTrue(steps(result).stream().anyMatch(s -> s.startsWith("Como no se encontró antiderivada")));
+    }
 }

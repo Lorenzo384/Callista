@@ -2,6 +2,7 @@ package com.callista.model;
 
 import com.callista.model.calculus.derivative.DerivativeCalculator;
 import com.callista.model.calculus.integral.DefiniteIntegral;
+import com.callista.model.calculus.integral.IndefiniteIntegral;
 import com.callista.model.calculus.numeric.NumericalMethod;
 import com.callista.model.entity.CalculationResult;
 import com.callista.model.entity.CurveStyle;
@@ -42,12 +43,14 @@ public class CalculatorModel {
     public static final int MAX_DERIVATIVE_ORDER = 3;
 
     private static final Set<OperationType> SUPPORTED =
-            EnumSet.of(OperationType.EVALUATE, OperationType.DERIVATIVE, OperationType.DEFINITE_INTEGRAL);
+            EnumSet.of(OperationType.EVALUATE, OperationType.DERIVATIVE,
+                    OperationType.INDEFINITE_INTEGRAL, OperationType.DEFINITE_INTEGRAL);
     private static final String[] ORDINALS = {"", "Primera", "Segunda", "Tercera"};
 
     private final ExpressionParser parser = new ExpressionParser();
     private final DerivativeCalculator derivativeCalculator = new DerivativeCalculator();
     private final DefiniteIntegral definiteIntegral = new DefiniteIntegral();
+    private final IndefiniteIntegral indefiniteIntegral = new IndefiniteIntegral();
 
     /**
      * Operaciones ya implementadas; el resto se muestran como «próximamente».
@@ -73,9 +76,19 @@ public class CalculatorModel {
      *                                    número real (por ejemplo, si contiene x)
      */
     public double interpretValue(String text) throws InvalidExpressionException {
-        // Se evalúa con x = NaN: si el valor depende de x, el resultado será NaN.
-        double value = parser.parse(text).evaluate(Double.NaN);
-        if (!Double.isFinite(value)) {
+        return interpretConstant(text).evaluate(0);
+    }
+
+    /**
+     * Interpreta un valor sin evaluarlo, para conservarlo exacto: {@code pi/2}
+     * sigue siendo {@code π/2}.
+     *
+     * @throws InvalidExpressionException si el texto no es válido, contiene x
+     *                                    o no da un número real
+     */
+    public Expression interpretConstant(String text) throws InvalidExpressionException {
+        Expression value = parser.parse(text);
+        if (value.dependsOnVariable() || !Double.isFinite(value.evaluate(0))) {
             throw new InvalidExpressionException(
                     "El valor debe ser un número real, por ejemplo 2, -1.5 o pi/2", 1);
         }
@@ -231,6 +244,24 @@ public class CalculatorModel {
             return parts.getFirst();
         }
         return String.join(", ", parts.subList(0, parts.size() - 1)) + " y " + parts.getLast();
+    }
+
+    /**
+     * Integral indefinida {@code ∫f(x) dx = F(x) + C}, con procedimiento y
+     * comprobación por derivación.
+     */
+    public CalculationResult integrate(Expression function) {
+        return indefiniteIntegral.solve(function);
+    }
+
+    /**
+     * Integral definida exacta con el Teorema Fundamental del Cálculo.
+     *
+     * @param a límite inferior, sin evaluar (ver {@link #interpretConstant})
+     * @param b límite superior, sin evaluar
+     */
+    public CalculationResult exactIntegral(Expression function, Expression a, Expression b) {
+        return definiteIntegral.exact(function, a, b);
     }
 
     /**

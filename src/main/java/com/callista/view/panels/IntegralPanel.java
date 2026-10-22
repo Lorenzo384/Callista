@@ -11,13 +11,15 @@ import java.text.ParseException;
 
 /**
  * Parámetros del modo «Integral definida»: los límites a y b, el método
- * numérico (o comparar los tres) y el número de subintervalos n.
+ * (exacto con el Teorema Fundamental, uno numérico o comparar los tres) y el
+ * número de subintervalos n, que solo usan los métodos numéricos.
  *
  * <p>El diseño está en {@code IntegralPanel.form} (IntelliJ GUI Designer).</p>
  */
 public class IntegralPanel {
 
-    private static final String HINT = "a y b aceptan expresiones como pi/2. Simpson necesita n par.";
+    private static final String HINT = "a y b aceptan expresiones como pi/2. n solo se usa en los métodos numéricos.";
+    private static final String EXACT = "Exacto";
     private static final String COMPARE = "Comparar los tres";
     private static final int DEFAULT_SUBINTERVALS = 10;
 
@@ -68,8 +70,8 @@ public class IntegralPanel {
         label3.setText("Método:");
         rootPanel.add(label3, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         methodComboBox = new JComboBox();
-        methodComboBox.setToolTipText("Método numérico, o comparar los tres");
-        rootPanel.add(methodComboBox, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        methodComboBox.setToolTipText("Exacto (Teorema Fundamental), un método numérico o comparar los tres");
+        rootPanel.add(methodComboBox, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, new Dimension(60, -1), new Dimension(90, -1), null, 0, false));
         final JLabel label4 = new JLabel();
         label4.setText("n =");
         rootPanel.add(label4, new com.intellij.uiDesigner.core.GridConstraints(1, 2, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -81,9 +83,9 @@ public class IntegralPanel {
         hintArea.setFocusable(false);
         hintArea.setLineWrap(true);
         hintArea.setOpaque(false);
-        hintArea.setText("a y b aceptan expresiones como pi/2. Simpson necesita n par.");
+        hintArea.setText("a y b aceptan expresiones como pi/2. n solo se usa en los métodos numéricos.");
         hintArea.setWrapStyleWord(true);
-        rootPanel.add(hintArea, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 4, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, new Dimension(50, 34), new Dimension(150, 34), null, 0, false));
+        rootPanel.add(hintArea, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 4, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, new Dimension(50, 34), new Dimension(150, 34), null, 0, false));
     }
 
     /**
@@ -94,9 +96,15 @@ public class IntegralPanel {
     }
 
     public IntegralPanel() {
-        DefaultComboBoxModel<Object> methods = new DefaultComboBoxModel<>(NumericalMethod.values());
+        DefaultComboBoxModel<Object> methods = new DefaultComboBoxModel<>();
+        methods.addElement(EXACT);
+        for (NumericalMethod method : NumericalMethod.values()) {
+            methods.addElement(method);
+        }
         methods.addElement(COMPARE);
         methodComboBox.setModel(methods);
+        methodComboBox.addActionListener(e -> subintervalsSpinner.setEnabled(!isExactSelected()));
+        subintervalsSpinner.setEnabled(false);
         subintervalsSpinner.setModel(new SpinnerNumberModel(DEFAULT_SUBINTERVALS, 1, 100_000, 1));
         lowerField.setFont(ViewStyles.MATH_FONT);
         upperField.setFont(ViewStyles.MATH_FONT);
@@ -133,6 +141,13 @@ public class IntegralPanel {
     }
 
     /**
+     * Indica si se eligió el cálculo exacto con el Teorema Fundamental.
+     */
+    public boolean isExactSelected() {
+        return EXACT.equals(methodComboBox.getSelectedItem());
+    }
+
+    /**
      * Indica si se eligió «Comparar los tres».
      */
     public boolean isCompareSelected() {
@@ -140,7 +155,7 @@ public class IntegralPanel {
     }
 
     /**
-     * Método elegido; si se eligió comparar, devuelve Simpson.
+     * Método numérico elegido; si se eligió exacto o comparar, devuelve Simpson.
      */
     public NumericalMethod getMethod() {
         return methodComboBox.getSelectedItem() instanceof NumericalMethod method ? method : NumericalMethod.SIMPSON;

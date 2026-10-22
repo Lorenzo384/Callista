@@ -13,7 +13,8 @@ import java.util.Optional;
 
 /**
  * Operación «Integral definida»: lee los límites, el método y el número de
- * subintervalos, y aproxima la integral (o compara los tres métodos).
+ * subintervalos, y calcula la integral de forma exacta o numérica (o compara
+ * los tres métodos numéricos).
  */
 public class IntegralController implements OperationController {
 
@@ -28,24 +29,29 @@ public class IntegralController implements OperationController {
     @Override
     public Optional<CalculationResult> calculate(Expression function) {
         IntegralPanel parameters = view.getIntegralPanel();
-        double a;
-        double b;
+        Expression a;
+        Expression b;
         try {
-            a = model.interpretValue(parameters.getLowerText());
+            a = model.interpretConstant(parameters.getLowerText());
         } catch (InvalidExpressionException e) {
             return invalid(parameters, Field.LOWER, "Límite inferior: " + e.getMessage(), e.getPosition());
         }
         try {
-            b = model.interpretValue(parameters.getUpperText());
+            b = model.interpretConstant(parameters.getUpperText());
         } catch (InvalidExpressionException e) {
             return invalid(parameters, Field.UPPER, "Límite superior: " + e.getMessage(), e.getPosition());
         }
+        if (parameters.isExactSelected()) {
+            return Optional.of(model.exactIntegral(function, a, b));
+        }
 
+        double av = a.evaluate(0);
+        double bv = b.evaluate(0);
         int n = parameters.getSubintervals();
         try {
             return Optional.of(parameters.isCompareSelected()
-                    ? model.compareIntegrationMethods(function, a, b, n)
-                    : model.approximateIntegral(function, a, b, parameters.getMethod(), n));
+                    ? model.compareIntegrationMethods(function, av, bv, n)
+                    : model.approximateIntegral(function, av, bv, parameters.getMethod(), n));
         } catch (ParameterException e) {
             return invalid(parameters, Field.SUBINTERVALS, e.getMessage(), 1);
         }

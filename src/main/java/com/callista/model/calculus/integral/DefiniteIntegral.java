@@ -12,21 +12,31 @@ import com.callista.model.entity.GraphCurve;
 import com.callista.model.entity.GraphPolygon;
 import com.callista.model.entity.SolutionStep;
 import com.callista.model.exception.ParameterException;
+import com.callista.model.exception.UnsupportedIntegralException;
+import com.callista.model.expression.Constant;
+import com.callista.model.expression.Difference;
 import com.callista.model.expression.Expression;
+import com.callista.model.expression.Simplifier;
+import com.callista.model.expression.Variable;
 import com.callista.model.graph.Range;
 import com.callista.util.FormatUtils;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.OptionalDouble;
 
 /**
  * Integral definida {@code ∫[a, b] f(x) dx}: arma el resultado, el
  * procedimiento y la gráfica.
  *
- * <p>Por ahora con métodos numéricos (trapecio, Simpson, punto medio) y la
- * comparación entre ellos. El cálculo exacto con el Teorema Fundamental del
- * Cálculo llegará con las integrales simbólicas.</p>
+ * <ul>
+ *     <li><b>Exacta</b>: con el Teorema Fundamental del Cálculo,
+ *     {@code F(b) - F(a)}, si f es continua en [a, b] y tiene antiderivada
+ *     elemental; si no la tiene, se aproxima con Simpson.</li>
+ *     <li><b>Numérica</b>: trapecio, Simpson o punto medio, y la comparación
+ *     entre ellos.</li>
+ * </ul>
  */
 public class DefiniteIntegral {
 
@@ -36,6 +46,104 @@ public class DefiniteIntegral {
     private static final int MAX_LISTED_NODES = 12;
     /** Con más subintervalos que estos, las figuras no se dibujan (serían demasiado finas). */
     private static final int MAX_DRAWN_SHAPES = 60;
+    /** Puntos donde se revisa que f sea continua antes de aplicar el Teorema Fundamental. */
+    private static final int CONTINUITY_SAMPLES = 2001;
+    /** Subintervalos de Simpson cuando no hay antiderivada elemental. */
+    private static final int FALLBACK_SUBINTERVALS = 1000;
+
+    private final IndefiniteIntegral indefinite = new IndefiniteIntegral();
+
+    /**
+     * Calcula la integral de forma exacta con el Teorema Fundamental del
+     * Cálculo: {@code ∫[a, b] f(x) dx = F(b) - F(a)}.
+     *
+     * <p>Los límites se reciben como expresiones para conservar el valor
+     * exacto: con {@code b = π} el resultado puede ser {@code π^3/3}.</p>
+     */
+    public CalculationResult exact(Expression f, Expression a, Expression b) {
+        double av = a.evaluate(0);
+        double bv = b.evaluate(0);
+        String integral = "∫[" + a + ", " + b + "] f(x) dx";
+        List<SolutionStep> steps = new ArrayList<>();
+        steps.add(new SolutionStep("Función: f(x) = " + f));
+
+        OptionalDouble gap = firstDiscontinuity(f, Math.min(av, bv), Math.max(av, bv));
+        if (gap.isPresent()) {
+            steps.add(new SolutionStep("f(x) no está definida en x ≈ " + fmt(gap.getAsDouble()) + ", dentro de ["
+                    + a + ", " + b + "]. Como f no es continua en el intervalo, el Teorema Fundamental no se "
+                    + "aplica: es una integral impropia."));
+            return new CalculationResult(integral + ": integral impropia", steps,
+                    new Graph(List.of(curve(f)), List.of(), xRange(av, bv)));
+        }
+
+        steps.add(new SolutionStep("Buscar una antiderivada F(x) de f(x):"));
+        Expression antiderivative;
+        try {
+            antiderivative = indefinite.antiderivative(f, steps, 1);
+        } catch (UnsupportedIntegralException e) {
+            return numericFallback(f, av, bv, steps, e);
+        }
+
+        Variable x = new Variable("x");
+        Expression atB = Simplifier.simplify(antiderivative.replace(x, b));
+        Expression atA = Simplifier.simplify(antiderivative.replace(x, a));
+        Expression exact = Simplifier.simplify(new Difference(atB, atA));
+        double value = exact.evaluate(0);
+
+        steps.add(new SolutionStep("Antiderivada: F(x) = " + antiderivative));
+        steps.add(new SolutionStep("Teorema Fundamental del Cálculo: ∫[a, b] f(x) dx = F(b) - F(a)"));
+        steps.add(new SolutionStep("F(" + b + ") = " + withApproximation(atB), 1));
+        steps.add(new SolutionStep("F(" + a + ") = " + withApproximation(atA), 1));
+        steps.add(new SolutionStep("Resultado: F(" + b + ") - F(" + a + ") = " + withApproximation(exact)));
+
+        double reference = reference(f, av, bv);
+        if (Double.isFinite(reference)) {
+            boolean agrees = Math.abs(reference - value) <= 1e-6 * Math.max(1, Math.abs(value));
+            steps.add(new SolutionStep("Comprobación numérica (Simpson con n = " + REFERENCE_SUBINTERVALS + "): ≈ "
+                    + fmt(reference) + (agrees ? " ✓" : " ✗ (no coincide)")));
+        }
+        return new CalculationResult(integral + " = " + withApproximation(exact), steps, graph(f, av, bv, List.of()));
+    }
+
+    /**
+     * Sin antiderivada elemental: explica por qué y aproxima con Simpson.
+     */
+    private CalculationResult numericFallback(Expression f, double a, double b, List<SolutionStep> steps,
+                                              UnsupportedIntegralException reason) {
+        steps.add(new SolutionStep(reason.getMessage()));
+        steps.add(new SolutionStep("Como no se encontró antiderivada, se aproxima con la regla de Simpson (n = "
+                + FALLBACK_SUBINTERVALS + "):"));
+        try {
+            CalculationResult numeric = approximate(f, a, b, NumericalMethod.SIMPSON, FALLBACK_SUBINTERVALS);
+            numeric.getSteps().stream().skip(1)
+                    .map(step -> new SolutionStep(step.getDescription(), step.getLevel() + 1))
+                    .forEach(steps::add);
+            return new CalculationResult(numeric.getSummary(), steps, numeric.getGraph().orElse(null));
+        } catch (ParameterException impossible) {
+            throw new IllegalStateException(impossible);
+        }
+    }
+
+    /**
+     * Primer punto del intervalo donde f no está definida o es enorme (una
+     * asíntota), revisando muchos puntos; vacío si parece continua.
+     */
+    private static OptionalDouble firstDiscontinuity(Expression f, double from, double to) {
+        for (int i = 0; i < CONTINUITY_SAMPLES; i++) {
+            double x = from + (to - from) * i / (CONTINUITY_SAMPLES - 1);
+            double y = f.evaluate(x);
+            if (!Double.isFinite(y) || Math.abs(y) > 1e12) {
+                return OptionalDouble.of(x);
+            }
+        }
+        return OptionalDouble.empty();
+    }
+
+    /** {@code 1/3 ≈ 0.3333333333}, o solo el número si ya es un número. */
+    private static String withApproximation(Expression e) {
+        boolean plainNumber = e instanceof Constant c && c.isNumber();
+        return plainNumber ? e.toString() : e + " ≈ " + fmt(e.evaluate(0));
+    }
 
     /**
      * Aproxima la integral con un método y explica cada paso.
