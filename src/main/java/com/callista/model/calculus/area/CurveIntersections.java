@@ -99,7 +99,7 @@ public final class CurveIntersections {
     /**
      * La raíz como valor exacto si es uno sencillo; si no, redondeada.
      */
-    static Intersection recognize(Expression h, double root) {
+    public static Intersection recognize(Expression h, double root) {
         Optional<Expression> exact = exactValue(root);
         if (exact.isPresent()) {
             double x = exact.get().evaluate(0);
@@ -114,7 +114,7 @@ public final class CurveIntersections {
     /**
      * Prueba, en orden de sencillez: p/q, (p/q)·π y (p ± √n)/q.
      */
-    static Optional<Expression> exactValue(double r) {
+    public static Optional<Expression> exactValue(double r) {
         double tolerance = 1e-8 * (1 + Math.abs(r));
         for (int q = 1; q <= MAX_DENOMINATOR; q++) {
             long p = Math.round(r * q);

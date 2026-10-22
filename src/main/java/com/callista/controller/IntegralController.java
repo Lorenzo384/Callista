@@ -12,9 +12,9 @@ import com.callista.view.panels.IntegralPanel.Field;
 import java.util.Optional;
 
 /**
- * Operación «Integral definida»: lee los límites, el método y el número de
- * subintervalos, y calcula la integral de forma exacta o numérica (o compara
- * los tres métodos numéricos).
+ * Operación «Integral definida»: lee los límites (números o ±∞), el método y
+ * el número de subintervalos, y calcula la integral de forma exacta (también
+ * impropia) o numérica (o compara los tres métodos numéricos).
  */
 public class IntegralController implements OperationController {
 
@@ -32,12 +32,12 @@ public class IntegralController implements OperationController {
         Expression a;
         Expression b;
         try {
-            a = model.interpretConstant(parameters.getLowerText());
+            a = model.interpretLimit(parameters.getLowerText());
         } catch (InvalidExpressionException e) {
             return invalid(parameters, Field.LOWER, "Límite inferior: " + e.getMessage(), e.getPosition());
         }
         try {
-            b = model.interpretConstant(parameters.getUpperText());
+            b = model.interpretLimit(parameters.getUpperText());
         } catch (InvalidExpressionException e) {
             return invalid(parameters, Field.UPPER, "Límite superior: " + e.getMessage(), e.getPosition());
         }
@@ -47,6 +47,11 @@ public class IntegralController implements OperationController {
 
         double av = a.evaluate(0);
         double bv = b.evaluate(0);
+        if (Double.isInfinite(av) || Double.isInfinite(bv)) {
+            Field field = Double.isInfinite(av) ? Field.LOWER : Field.UPPER;
+            return invalid(parameters, field, "Los métodos numéricos necesitan límites finitos: elige «Exacto» "
+                    + "para la integral impropia.", 1);
+        }
         int n = parameters.getSubintervals();
         try {
             return Optional.of(parameters.isCompareSelected()

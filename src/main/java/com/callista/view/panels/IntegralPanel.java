@@ -18,7 +18,7 @@ import java.text.ParseException;
  */
 public class IntegralPanel {
 
-    private static final String HINT = "a y b aceptan expresiones como pi/2. n solo se usa en los métodos numéricos.";
+    private static final String HINT = "a y b aceptan pi/2, inf o -inf (impropias, con Exacto). n es para los métodos numéricos.";
     private static final String EXACT = "Exacto";
     private static final String COMPARE = "Comparar los tres";
     private static final int DEFAULT_SUBINTERVALS = 10;
@@ -57,14 +57,14 @@ public class IntegralPanel {
         rootPanel.add(label1, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         lowerField = new JTextField();
         lowerField.setText("0");
-        lowerField.setToolTipText("Límite inferior de integración");
+        lowerField.setToolTipText("Límite inferior: número, pi/2 o -inf");
         rootPanel.add(lowerField, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(60, -1), null, 0, false));
         final JLabel label2 = new JLabel();
         label2.setText("b =");
         rootPanel.add(label2, new com.intellij.uiDesigner.core.GridConstraints(0, 2, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         upperField = new JTextField();
         upperField.setText("1");
-        upperField.setToolTipText("Límite superior de integración");
+        upperField.setToolTipText("Límite superior: número, pi/2 o inf");
         rootPanel.add(upperField, new com.intellij.uiDesigner.core.GridConstraints(0, 3, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(60, -1), null, 0, false));
         final JLabel label3 = new JLabel();
         label3.setText("Método:");
@@ -83,7 +83,7 @@ public class IntegralPanel {
         hintArea.setFocusable(false);
         hintArea.setLineWrap(true);
         hintArea.setOpaque(false);
-        hintArea.setText("a y b aceptan expresiones como pi/2. n solo se usa en los métodos numéricos.");
+        hintArea.setText("a y b aceptan pi/2, inf o -inf (impropias, con Exacto). n es para los métodos numéricos.");
         hintArea.setWrapStyleWord(true);
         rootPanel.add(hintArea, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 4, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, new Dimension(50, 34), new Dimension(150, 34), null, 0, false));
     }

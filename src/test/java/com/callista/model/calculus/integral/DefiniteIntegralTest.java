@@ -130,11 +130,11 @@ class DefiniteIntegralTest {
     }
 
     @Test
-    void refusesWhenTheFunctionIsNotContinuous() throws InvalidExpressionException {
-        // Aplicar F(b) - F(a) a 1/x² en [-1, 1] daría -2, que es falso
+    void treatsAnAsymptoteInsideAsAnImproperIntegral() throws InvalidExpressionException {
+        // Aplicar F(b) - F(a) a 1/x² en [-1, 1] daría -2, que es falso: la integral diverge
         CalculationResult result = exact("1/x^2", "-1", "1");
-        assertEquals("∫[-1, 1] f(x) dx: integral impropia", result.getSummary());
-        assertTrue(steps(result).getLast().contains("el Teorema Fundamental no se aplica"));
+        assertEquals("∫[-1, 1] f(x) dx diverge (∞)", result.getSummary());
+        assertTrue(steps(result).getLast().contains("diverge"));
     }
 
     @Test

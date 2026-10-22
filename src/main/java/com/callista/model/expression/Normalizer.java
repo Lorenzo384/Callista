@@ -382,10 +382,12 @@ final class Normalizer {
         }
         Expression base = simplify(p.getLeft());
         if (n.isPresent() && base instanceof Constant c && c.isNumber()) {
-            double value = Math.pow(c.getValue(), n.get().doubleValue());
-            if (Double.isFinite(value) && value == Math.rint(value)) {
+            // Math.pow(8, 2/3) da 3.9999999999999996: se acepta el entero más cercano
+            double value = Power.realPower(c.getValue(), n.get().doubleValue());
+            double rounded = Math.rint(value);
+            if (Double.isFinite(value) && Math.abs(value - rounded) < 1e-9 * Math.max(1, Math.abs(rounded))) {
                 applied.add(SimplificationRule.NUMBERS);
-                return Term.number(Fraction.fromDouble(value)); // 4^(1/2) = 2
+                return Term.number(Fraction.fromDouble(rounded)); // 4^(1/2) = 2, (-8)^(1/3) = -2
             }
         }
         return withNumericPowers(Term.factor(base, exponent));
@@ -570,7 +572,7 @@ final class Normalizer {
         }
         if (c.signum() < 0) {
             Expression first = numerator.getFirst();
-            numerator.set(0, first instanceof Constant k ? new Constant(-k.getValue()) : new Negation(first));
+            numerator.set(0, first instanceof Constant k && k.isNumber() ? new Constant(-k.getValue()) : new Negation(first));
         }
         if (!asDecimal && c.getDenominator() != 1) {
             denominator.addFirst(new Constant(c.getDenominator()));

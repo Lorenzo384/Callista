@@ -11,6 +11,8 @@ public final class Constant implements Expression {
     public static final Constant PI = new Constant(Math.PI, "π");
     /** La constante de Euler e ≈ 2.71828. */
     public static final Constant E = new Constant(Math.E, "e");
+    /** Infinito, solo para los límites de una integral impropia: {@code ∫[1, ∞)}. */
+    public static final Constant INFINITY = new Constant(Double.POSITIVE_INFINITY, "∞");
 
     private final double value;
     private final String symbol;

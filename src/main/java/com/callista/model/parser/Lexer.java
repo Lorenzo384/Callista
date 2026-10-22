@@ -42,6 +42,9 @@ public class Lexer {
                 tokens.add(readNumber());
             } else if (Character.isLetter(current)) {
                 tokens.add(readIdentifier());
+            } else if (current == '∞') {
+                tokens.add(new Token(TokenType.IDENTIFIER, "∞", index + 1));
+                index++;
             } else {
                 tokens.add(readSymbol(current));
             }

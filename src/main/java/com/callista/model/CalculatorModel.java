@@ -16,6 +16,7 @@ import com.callista.model.exception.InvalidExpressionException;
 import com.callista.model.exception.ParameterException;
 import com.callista.model.expression.Constant;
 import com.callista.model.expression.Expression;
+import com.callista.model.expression.Negation;
 import com.callista.model.expression.SimplificationRule;
 import com.callista.model.expression.Simplifier;
 import com.callista.model.expression.Variable;
@@ -68,7 +69,11 @@ public class CalculatorModel {
      * @throws InvalidExpressionException si el texto no es una expresión válida
      */
     public Expression interpret(String text) throws InvalidExpressionException {
-        return parser.parse(text);
+        Expression function = parser.parse(text);
+        if (function.contains(Constant.INFINITY)) {
+            throw new InvalidExpressionException("∞ solo se puede usar en los límites de una integral", 1);
+        }
+        return function;
     }
 
     /**
@@ -96,6 +101,24 @@ public class CalculatorModel {
                     "El valor debe ser un número real, por ejemplo 2, -1.5 o pi/2", 1);
         }
         return value;
+    }
+
+    /**
+     * Interpreta el límite de una integral: un número como en
+     * {@link #interpretConstant} o infinito ({@code inf}, {@code -inf}, {@code ∞}).
+     *
+     * @throws InvalidExpressionException si el texto no es válido o no es un
+     *                                    número real ni ±∞
+     */
+    public Expression interpretLimit(String text) throws InvalidExpressionException {
+        Expression value = parser.parse(text);
+        double number = value.evaluate(0);
+        boolean infinite = value.contains(Constant.INFINITY) && Double.isInfinite(number);
+        if (value.dependsOnVariable() || !(Double.isFinite(number) || infinite)) {
+            throw new InvalidExpressionException(
+                    "El límite debe ser un número real (2, -1.5, pi/2) o infinito (inf, -inf)", 1);
+        }
+        return infinite ? (number > 0 ? Constant.INFINITY : new Negation(Constant.INFINITY)) : value;
     }
 
     /**
@@ -258,9 +281,10 @@ public class CalculatorModel {
     }
 
     /**
-     * Integral definida exacta con el Teorema Fundamental del Cálculo.
+     * Integral definida exacta con el Teorema Fundamental del Cálculo; si es
+     * impropia, como límite (converge o diverge).
      *
-     * @param a límite inferior, sin evaluar (ver {@link #interpretConstant})
+     * @param a límite inferior, sin evaluar (ver {@link #interpretLimit})
      * @param b límite superior, sin evaluar
      */
     public CalculationResult exactIntegral(Expression function, Expression a, Expression b) {
