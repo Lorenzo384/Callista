@@ -1,5 +1,6 @@
 package com.callista.model;
 
+import com.callista.model.calculus.area.AreaBetweenCurves;
 import com.callista.model.calculus.derivative.DerivativeCalculator;
 import com.callista.model.calculus.integral.DefiniteIntegral;
 import com.callista.model.calculus.integral.IndefiniteIntegral;
@@ -44,13 +45,15 @@ public class CalculatorModel {
 
     private static final Set<OperationType> SUPPORTED =
             EnumSet.of(OperationType.EVALUATE, OperationType.DERIVATIVE,
-                    OperationType.INDEFINITE_INTEGRAL, OperationType.DEFINITE_INTEGRAL);
+                    OperationType.INDEFINITE_INTEGRAL, OperationType.DEFINITE_INTEGRAL,
+                    OperationType.AREA_BETWEEN_CURVES);
     private static final String[] ORDINALS = {"", "Primera", "Segunda", "Tercera"};
 
     private final ExpressionParser parser = new ExpressionParser();
     private final DerivativeCalculator derivativeCalculator = new DerivativeCalculator();
     private final DefiniteIntegral definiteIntegral = new DefiniteIntegral();
     private final IndefiniteIntegral indefiniteIntegral = new IndefiniteIntegral();
+    private final AreaBetweenCurves areaBetweenCurves = new AreaBetweenCurves();
 
     /**
      * Operaciones ya implementadas; el resto se muestran como «próximamente».
@@ -283,6 +286,34 @@ public class CalculatorModel {
     public CalculationResult compareIntegrationMethods(Expression function, double a, double b, int n)
             throws ParameterException {
         return definiteIntegral.compare(function, a, b, n);
+    }
+
+    /**
+     * Área de la región encerrada por f y g, del primer al último punto de corte.
+     *
+     * @throws ParameterException si las curvas no encierran una región
+     */
+    public CalculationResult enclosedArea(Expression f, Expression g) throws ParameterException {
+        return areaBetweenCurves.enclosed(f, g);
+    }
+
+    /**
+     * Área entre f y g en [a, b], partiendo el intervalo en los puntos de corte.
+     *
+     * @param a límite inferior, sin evaluar (ver {@link #interpretConstant})
+     * @param b límite superior, sin evaluar
+     * @throws ParameterException si a no es menor que b, o si f y g son iguales
+     */
+    public CalculationResult areaBetween(Expression f, Expression g, Expression a, Expression b)
+            throws ParameterException {
+        return areaBetweenCurves.between(f, g, a, b);
+    }
+
+    /**
+     * La curva g(x) = 0 (el eje x), para cuando no se escribe g.
+     */
+    public Expression xAxis() {
+        return AreaBetweenCurves.xAxis();
     }
 
     /** {@code f(x)}, {@code f'(x)}, {@code f''(x)}… */

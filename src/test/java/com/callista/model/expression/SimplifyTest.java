@@ -52,6 +52,20 @@ class SimplifyTest {
             "4^(1/2)*x              | 2*x",
             "2^3^2                  | 512",
             "sen(0) + ln(e) + cos(pi) | 0",
+            // valores notables y radicales
+            "cos(pi/4)              | sqrt(2)/2",
+            "sen(pi/6)              | 1/2",
+            "tan(pi/6)              | sqrt(3)/3",
+            "sec(pi/6)              | 2*sqrt(3)/3",
+            "cos(5pi/6)             | -sqrt(3)/2",
+            "2cos(pi/4) + 2sen(pi/4) | 2*sqrt(2)",
+            "sen(pi/12)             | sin(π/12)",
+            "tan(pi/2)              | tan(π/2)",
+            "sen(1)                 | sin(1)",
+            "5^(3/2)                | 5*sqrt(5)",
+            "2^(5/2)                | 4*sqrt(2)",
+            "raiz(5)*raiz(5)        | 5",
+            "raiz(5)*raiz(5) + 1    | 6",
             "1/3*x^(-2/3)           | 1/(3*x^(2/3))",
             // orden y signos
             "x - (2x - 3x^2)        | 3*x^2 - x",
@@ -111,6 +125,8 @@ class SimplifyTest {
             "(x - 1)*(x + 1)      | x^2 - 1",
             "(x^2 + 1)/x          | x + 1/x",
             "2*(x + 3) - 6        | 2*x",
+            "(1 + raiz(5))^2      | 6 + 2*sqrt(5)",
+            "(1 - raiz(5))^3/24 - (1 + raiz(5))^3/24 | -2*sqrt(5)/3",
     })
     void expandsProductsOfSums(String input, String expected) throws InvalidExpressionException {
         assertEquals(expected, Simplifier.expand(parser.parse(input)).toString());

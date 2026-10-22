@@ -10,6 +10,7 @@ public enum OperationType {
     DERIVATIVE("Derivada"),
     INDEFINITE_INTEGRAL("Integral indefinida"),
     DEFINITE_INTEGRAL("Integral definida"),
+    AREA_BETWEEN_CURVES("Área entre curvas"),
     SOLID_OF_REVOLUTION("Volumen de sólido de revolución");
 
     private final String displayName;

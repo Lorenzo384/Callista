@@ -48,6 +48,17 @@ class GraphPanelTest {
     }
 
     @Test
+    void drawsTheAreaBetweenTwoCurves() throws Exception {
+        GraphPanel panel = new GraphPanel();
+        panel.showGraph(model.enclosedArea(model.interpret("x^3"), model.interpret("x")).getGraph().orElseThrow());
+        paint(panel);
+        // La región se interrumpe donde una curva no existe
+        panel.showGraph(model.areaBetween(model.interpret("1/x"), model.interpret("0"),
+                model.interpret("-1"), model.interpret("1")).getGraph().orElseThrow());
+        paint(panel);
+    }
+
+    @Test
     void drawsInEveryPalette() throws InvalidExpressionException {
         GraphPanel panel = new GraphPanel();
         panel.showGraph(graphOf("x^2", 1));

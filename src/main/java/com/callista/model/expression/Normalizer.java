@@ -2,6 +2,7 @@ package com.callista.model.expression;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +37,21 @@ final class Normalizer {
 
     /** Diferencia máxima para reconocer un valor exacto: sen(π) da 1.2e-16 y no 0. */
     private static final double KNOWN_VALUE_TOLERANCE = 1e-12;
+
+    /** Valor máximo que se sustituye como entero conocido. */
+    private static final double MAX_KNOWN_INTEGER = 1e12;
+
+    /** Funciones trigonométricas que se evalúan exactamente en los ángulos notables. */
+    private static final Set<MathFunction> TRIGONOMETRIC = EnumSet.of(MathFunction.SIN, MathFunction.COS,
+            MathFunction.TAN, MathFunction.COT, MathFunction.SEC, MathFunction.CSC);
+    /** Los ángulos notables son múltiplos de π/12 (incluye π/6, π/4, π/3 y π/2). */
+    private static final int NOTABLE_ANGLE_DIVISOR = 12;
+    /** Denominadores de los valores notables: 1/2, √3/3, 2√3/3, √3/6… */
+    private static final long[] NOTABLE_DENOMINATORS = {1, 2, 3, 6};
+    /** Base máxima de una potencia numérica que saca su parte entera: 5^(3/2) = 5·√5. */
+    private static final double MAX_NUMERIC_BASE = 1000;
+    /** Parte entera máxima de su exponente. */
+    private static final long MAX_NUMERIC_WHOLE_EXPONENT = 6;
 
     private final Set<SimplificationRule> applied;
 
@@ -111,6 +127,8 @@ final class Normalizer {
     /**
      * Simplifica el argumento y, si la función queda aplicada a una constante
      * con valor entero, la sustituye: {@code sen(0) = 0}, {@code ln(e) = 1}.
+     * Las trigonométricas en un ángulo notable también se sustituyen:
+     * {@code cos(π/4) = √2/2}, {@code tan(π/6) = √3/3}.
      */
     private Expression simplifyFunction(FunctionCall call) {
         Expression argument = simplify(call.getArgument());
@@ -118,12 +136,44 @@ final class Normalizer {
         if (!argument.dependsOnVariable()) {
             double value = simplified.evaluate(0);
             double rounded = Math.rint(value);
-            if (Double.isFinite(value) && Math.abs(value - rounded) < KNOWN_VALUE_TOLERANCE) {
+            // Un valor enorme no es un entero: tan(π/2) da 1.6e16 por redondeo, pero no existe
+            if (Double.isFinite(value) && Math.abs(value) < MAX_KNOWN_INTEGER
+                    && Math.abs(value - rounded) < KNOWN_VALUE_TOLERANCE) {
                 applied.add(SimplificationRule.KNOWN_VALUES);
                 return new Constant(rounded == 0 ? 0 : rounded);
             }
+            Optional<Expression> notable = notableTrigonometricValue(call.getFunction(), argument, value);
+            if (notable.isPresent()) {
+                applied.add(SimplificationRule.KNOWN_VALUES);
+                return notable.get();
+            }
         }
         return simplified;
+    }
+
+    /**
+     * Valor exacto de una función trigonométrica en un múltiplo de π/12, si
+     * es de la forma (p/q)·√n con n = 1, 2 o 3: {@code sen(π/6) = 1/2},
+     * {@code sen(π/4) = √2/2}, {@code sec(π/6) = 2√3/3}.
+     */
+    private Optional<Expression> notableTrigonometricValue(MathFunction function, Expression argument, double value) {
+        double turns = argument.evaluate(0) / Math.PI * NOTABLE_ANGLE_DIVISOR;
+        if (!TRIGONOMETRIC.contains(function) || !Double.isFinite(value) || Math.abs(value) > MAX_KNOWN_INTEGER
+                || Math.abs(turns - Math.rint(turns)) > KNOWN_VALUE_TOLERANCE) {
+            return Optional.empty();
+        }
+        for (int radicand = 1; radicand <= 3; radicand++) {
+            double ratio = value / Math.sqrt(radicand);
+            for (long q : NOTABLE_DENOMINATORS) {
+                long p = Math.round(ratio * q);
+                if (Math.abs((double) p / q - ratio) < KNOWN_VALUE_TOLERANCE) {
+                    Expression coefficient = Fraction.of(p, q).toExpression();
+                    return Optional.of(radicand == 1 ? coefficient : simplify(new Product(coefficient,
+                            new FunctionCall(MathFunction.SQRT, new Constant(radicand)))));
+                }
+            }
+        }
+        return Optional.empty();
     }
 
     // ------------------------------------------------------------ términos
@@ -222,10 +272,9 @@ final class Normalizer {
             case FunctionCall f when f.getFunction() == MathFunction.SQRT ->
                     power(new Power(f.getArgument(), new Quotient(new Constant(1), new Constant(2))));
             case FunctionCall f -> {
+                // Si se sustituyó por un valor (2 o √2/2), se convierte ese valor
                 Expression simplified = simplifyFunction(f);
-                yield simplified instanceof Constant c && c.isNumber()
-                        ? Term.number(Fraction.fromDouble(c.getValue()))
-                        : Term.factor(simplified, one());
+                yield simplified instanceof FunctionCall ? Term.factor(simplified, one()) : term(simplified);
             }
             default -> Term.factor(e, one()); // variable, π, e
         };
@@ -270,7 +319,7 @@ final class Normalizer {
                 factors.put(base, sum);
             }
         });
-        return withoutEvenAbsolutes(new Term(a.coefficient().multiply(b.coefficient()), factors));
+        return withNumericPowers(withoutEvenAbsolutes(new Term(a.coefficient().multiply(b.coefficient()), factors)));
     }
 
     /**
@@ -339,7 +388,39 @@ final class Normalizer {
                 return Term.number(Fraction.fromDouble(value)); // 4^(1/2) = 2
             }
         }
-        return Term.factor(base, exponent);
+        return withNumericPowers(Term.factor(base, exponent));
+    }
+
+    /**
+     * Una potencia de un número entero saca la parte entera de su exponente
+     * al coeficiente: {@code 5^(3/2) = 5·√5} y {@code √5·√5 = 5}. Así los
+     * radicales se agrupan: {@code (1 + √5)^2 = 6 + 2√5}.
+     */
+    private Term withNumericPowers(Term t) {
+        Fraction coefficient = t.coefficient();
+        Map<Expression, Expression> factors = new LinkedHashMap<>();
+        boolean changed = false;
+        for (Map.Entry<Expression, Expression> factor : t.factors().entrySet()) {
+            Optional<Fraction> n = numeric(factor.getValue());
+            long whole = n.map(e -> e.getNumerator() / e.getDenominator()).orElse(0L);
+            if (factor.getKey() instanceof Constant c && c.isNumber() && c.getValue() == Math.rint(c.getValue())
+                    && c.getValue() >= 2 && c.getValue() <= MAX_NUMERIC_BASE
+                    && whole != 0 && Math.abs(whole) <= MAX_NUMERIC_WHOLE_EXPONENT) {
+                coefficient = coefficient.multiply(Fraction.of((long) c.getValue()).pow(whole));
+                Fraction rest = n.get().add(Fraction.of(-whole));
+                if (!rest.isZero()) {
+                    factors.put(factor.getKey(), rest.toExpression());
+                }
+                changed = true;
+            } else {
+                factors.put(factor.getKey(), factor.getValue());
+            }
+        }
+        if (!changed) {
+            return t;
+        }
+        applied.add(SimplificationRule.EXPONENT_LAWS);
+        return new Term(coefficient, factors);
     }
 
     private Term raise(Term t, long n) {
@@ -349,7 +430,7 @@ final class Normalizer {
         } else if (!t.factors().isEmpty()) {
             applied.add(SimplificationRule.EXPONENT_LAWS); // x^0 = 1
         }
-        return withoutEvenAbsolutes(new Term(t.coefficient().pow(n), factors));
+        return withNumericPowers(withoutEvenAbsolutes(new Term(t.coefficient().pow(n), factors)));
     }
 
     // ------------------------------------------------------------ exponentes

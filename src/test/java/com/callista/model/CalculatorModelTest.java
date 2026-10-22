@@ -25,9 +25,9 @@ class CalculatorModelTest {
     private final CalculatorModel model = new CalculatorModel();
 
     @Test
-    void supportsEvaluationDerivativesAndDefiniteIntegrals() {
+    void supportsEvaluationDerivativesIntegralsAndAreas() {
         assertEquals(Set.of(OperationType.EVALUATE, OperationType.DERIVATIVE, OperationType.INDEFINITE_INTEGRAL,
-                OperationType.DEFINITE_INTEGRAL), model.getSupportedOperations());
+                OperationType.DEFINITE_INTEGRAL, OperationType.AREA_BETWEEN_CURVES), model.getSupportedOperations());
     }
 
     @Test

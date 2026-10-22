@@ -9,6 +9,7 @@ import com.callista.view.components.KeypadPanel;
 import com.callista.view.components.ResultPanel;
 import com.callista.view.components.StepsPanel;
 import com.callista.model.entity.SolutionStep;
+import com.callista.view.panels.AreaPanel;
 import com.callista.view.panels.DerivativePanel;
 import com.callista.view.panels.EvaluationPanel;
 import com.callista.view.panels.IntegralPanel;
@@ -44,6 +45,7 @@ public class MainFrame extends JFrame {
     private EvaluationPanel evaluationPanel;
     private DerivativePanel derivativePanel;
     private IntegralPanel integralPanel;
+    private AreaPanel areaPanel;
     private JLabel unavailableLabel;
     private JLabel noParametersLabel;
     private KeypadPanel keypadPanel;
@@ -82,7 +84,7 @@ public class MainFrame extends JFrame {
         inputPanel = new InputPanel();
         rootPanel.add(inputPanel.$$$getRootComponent$$$(), new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         parametersPanel = new JPanel();
-        parametersPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(5, 1, new Insets(4, 8, 8, 8), -1, -1));
+        parametersPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(6, 1, new Insets(4, 8, 8, 8), -1, -1));
         parametersPanel.setBorder(BorderFactory.createTitledBorder(null, "Parámetros", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         rootPanel.add(parametersPanel, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         evaluationPanel = new EvaluationPanel();
@@ -91,12 +93,14 @@ public class MainFrame extends JFrame {
         parametersPanel.add(derivativePanel.$$$getRootComponent$$$(), new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         integralPanel = new IntegralPanel();
         parametersPanel.add(integralPanel.$$$getRootComponent$$$(), new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        areaPanel = new AreaPanel();
+        parametersPanel.add(areaPanel.$$$getRootComponent$$$(), new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         noParametersLabel = new JLabel();
         noParametersLabel.setText("Sin parámetros: se calcula ∫ f(x) dx + C.");
-        parametersPanel.add(noParametersLabel, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        parametersPanel.add(noParametersLabel, new com.intellij.uiDesigner.core.GridConstraints(4, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         unavailableLabel = new JLabel();
         unavailableLabel.setText("Esta operación estará disponible próximamente.");
-        parametersPanel.add(unavailableLabel, new com.intellij.uiDesigner.core.GridConstraints(4, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        parametersPanel.add(unavailableLabel, new com.intellij.uiDesigner.core.GridConstraints(5, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         keypadPanel = new KeypadPanel();
         rootPanel.add(keypadPanel.$$$getRootComponent$$$(), new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         actionPanel = new ActionPanel();
@@ -176,6 +180,7 @@ public class MainFrame extends JFrame {
         evaluationPanel.setVisible(operation == OperationType.EVALUATE);
         derivativePanel.setVisible(operation == OperationType.DERIVATIVE);
         integralPanel.setVisible(operation == OperationType.DEFINITE_INTEGRAL);
+        areaPanel.setVisible(operation == OperationType.AREA_BETWEEN_CURVES);
         noParametersLabel.setVisible(operation == OperationType.INDEFINITE_INTEGRAL && available);
         unavailableLabel.setVisible(!available);
         actionPanel.setCalculateEnabled(available);
@@ -234,6 +239,13 @@ public class MainFrame extends JFrame {
         return integralPanel;
     }
 
+    /**
+     * Parámetros del modo «Área entre curvas».
+     */
+    public AreaPanel getAreaPanel() {
+        return areaPanel;
+    }
+
     // ------------------------------------------------------------ acciones
 
     /**
@@ -245,6 +257,7 @@ public class MainFrame extends JFrame {
         evaluationPanel.onEnter(listener);
         derivativePanel.onEnter(listener);
         integralPanel.onEnter(listener);
+        areaPanel.onEnter(listener);
     }
 
     public void onClear(Runnable listener) {
@@ -284,6 +297,7 @@ public class MainFrame extends JFrame {
         evaluationPanel.clearError();
         derivativePanel.clearError();
         integralPanel.clearError();
+        areaPanel.clearError();
         clearResult();
     }
 

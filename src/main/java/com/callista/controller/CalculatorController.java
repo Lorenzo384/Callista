@@ -31,7 +31,8 @@ public class CalculatorController {
                 OperationType.EVALUATE, new EvaluationController(view, model),
                 OperationType.DERIVATIVE, new DerivativeController(view, model),
                 OperationType.INDEFINITE_INTEGRAL, new IndefiniteIntegralController(model),
-                OperationType.DEFINITE_INTEGRAL, new IntegralController(view, model));
+                OperationType.DEFINITE_INTEGRAL, new IntegralController(view, model),
+                OperationType.AREA_BETWEEN_CURVES, new AreaController(view, model));
 
         view.setOperations(OperationType.values(), model.getSupportedOperations());
         view.onOperationChanged(this::changeOperation);
