@@ -15,6 +15,11 @@ public final class Sum extends BinaryOperation {
     }
 
     @Override
+    public BinaryOperation withOperands(Expression left, Expression right) {
+        return new Sum(left, right);
+    }
+
+    @Override
     public int precedence() {
         return ADDITIVE;
     }

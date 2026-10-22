@@ -88,6 +88,16 @@ class ExpressionTest {
     }
 
     @Test
+    void replacesAndFindsSubexpressions() {
+        Expression f = new Product(x, new FunctionCall(MathFunction.COS, new Power(x, c(2))));
+        Variable u = new Variable("u");
+        assertEquals("x*cos(u)", f.replace(new Power(x, c(2)), u).toString());
+        assertEquals("2*cos(2^2)", f.replace(x, c(2)).toString());
+        assertTrue(f.contains(new Power(x, c(2))));
+        assertFalse(f.contains(u));
+    }
+
+    @Test
     void comparesStructurally() {
         assertEquals(new Power(x, c(2)), new Power(new Variable("x"), c(2)));
         assertEquals(new Power(x, c(2)).hashCode(), new Power(new Variable("x"), c(2)).hashCode());
@@ -100,7 +110,7 @@ class ExpressionTest {
 
     @Test
     void powerIsRightAssociative() {
-        assertEquals("2^3^2", new Power(c(2), new Power(c(3), c(2))).toString());
+        assertEquals("2^(3^2)", new Power(c(2), new Power(c(3), c(2))).toString());
         assertEquals("(2^3)^2", new Power(new Power(c(2), c(3)), c(2)).toString());
         assertEquals(512, new Power(c(2), new Power(c(3), c(2))).evaluate(0), DELTA);
     }

@@ -15,6 +15,11 @@ public final class Quotient extends BinaryOperation {
     }
 
     @Override
+    public BinaryOperation withOperands(Expression left, Expression right) {
+        return new Quotient(left, right);
+    }
+
+    @Override
     public int precedence() {
         return MULTIPLICATIVE;
     }

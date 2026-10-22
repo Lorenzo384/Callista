@@ -1,5 +1,6 @@
 package com.callista.view;
 
+import com.callista.model.entity.Graph;
 import com.callista.model.entity.OperationType;
 import com.callista.view.components.ActionPanel;
 import com.callista.view.components.GraphPanel;
@@ -10,6 +11,7 @@ import com.callista.view.components.StepsPanel;
 import com.callista.model.entity.SolutionStep;
 import com.callista.view.panels.DerivativePanel;
 import com.callista.view.panels.EvaluationPanel;
+import com.callista.view.panels.IntegralPanel;
 import com.formdev.flatlaf.FlatLaf;
 
 import javax.swing.*;
@@ -41,7 +43,9 @@ public class MainFrame extends JFrame {
     private JPanel parametersPanel;
     private EvaluationPanel evaluationPanel;
     private DerivativePanel derivativePanel;
+    private IntegralPanel integralPanel;
     private JLabel unavailableLabel;
+    private JLabel noParametersLabel;
     private KeypadPanel keypadPanel;
     private ActionPanel actionPanel;
     private ResultPanel resultPanel;
@@ -69,31 +73,36 @@ public class MainFrame extends JFrame {
         rootPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(8, 1, new Insets(10, 10, 10, 10), -1, 8));
         final JPanel panel1 = new JPanel();
         panel1.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
-        rootPanel.add(panel1, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        rootPanel.add(panel1, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label1 = new JLabel();
         label1.setText("Operación:");
         panel1.add(label1, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         operationComboBox = new JComboBox();
         panel1.add(operationComboBox, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         inputPanel = new InputPanel();
-        rootPanel.add(inputPanel.$$$getRootComponent$$$(), new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        rootPanel.add(inputPanel.$$$getRootComponent$$$(), new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         parametersPanel = new JPanel();
-        parametersPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(3, 1, new Insets(4, 8, 8, 8), -1, -1));
+        parametersPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(5, 1, new Insets(4, 8, 8, 8), -1, -1));
         parametersPanel.setBorder(BorderFactory.createTitledBorder(null, "Parámetros", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
-        rootPanel.add(parametersPanel, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        rootPanel.add(parametersPanel, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         evaluationPanel = new EvaluationPanel();
-        parametersPanel.add(evaluationPanel.$$$getRootComponent$$$(), new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        parametersPanel.add(evaluationPanel.$$$getRootComponent$$$(), new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         derivativePanel = new DerivativePanel();
-        parametersPanel.add(derivativePanel.$$$getRootComponent$$$(), new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        parametersPanel.add(derivativePanel.$$$getRootComponent$$$(), new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        integralPanel = new IntegralPanel();
+        parametersPanel.add(integralPanel.$$$getRootComponent$$$(), new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        noParametersLabel = new JLabel();
+        noParametersLabel.setText("Sin parámetros: se calcula ∫ f(x) dx + C.");
+        parametersPanel.add(noParametersLabel, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         unavailableLabel = new JLabel();
         unavailableLabel.setText("Esta operación estará disponible próximamente.");
-        parametersPanel.add(unavailableLabel, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        parametersPanel.add(unavailableLabel, new com.intellij.uiDesigner.core.GridConstraints(4, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         keypadPanel = new KeypadPanel();
-        rootPanel.add(keypadPanel.$$$getRootComponent$$$(), new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        rootPanel.add(keypadPanel.$$$getRootComponent$$$(), new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         actionPanel = new ActionPanel();
-        rootPanel.add(actionPanel.$$$getRootComponent$$$(), new com.intellij.uiDesigner.core.GridConstraints(4, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        rootPanel.add(actionPanel.$$$getRootComponent$$$(), new com.intellij.uiDesigner.core.GridConstraints(4, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         resultPanel = new ResultPanel();
-        rootPanel.add(resultPanel.$$$getRootComponent$$$(), new com.intellij.uiDesigner.core.GridConstraints(5, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        rootPanel.add(resultPanel.$$$getRootComponent$$$(), new com.intellij.uiDesigner.core.GridConstraints(5, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         bottomTabs = new JTabbedPane();
         rootPanel.add(bottomTabs, new com.intellij.uiDesigner.core.GridConstraints(6, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_BOTH, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(200, 160), null, 0, false));
         stepsPanel = new StepsPanel();
@@ -123,6 +132,7 @@ public class MainFrame extends JFrame {
         setJMenuBar(createMenuBar(palette));
         actionPanel.makeCalculateDefault(getRootPane());
         resultPanel.setColors(palette.getResultBackground(), palette.getResultForeground());
+        graphPanel.setColors(palette.getGraphColors());
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setMinimumSize(new Dimension(400, 700));
         setSize(440, 780);
@@ -130,6 +140,7 @@ public class MainFrame extends JFrame {
 
         statusLabel.setForeground(ViewStyles.secondaryTextColor());
         unavailableLabel.setForeground(ViewStyles.secondaryTextColor());
+        noParametersLabel.setForeground(ViewStyles.secondaryTextColor());
         operationComboBox.setRenderer(new OperationRenderer());
 
         // El teclado solo edita el texto de la expresión: no pasa por el controlador.
@@ -164,6 +175,8 @@ public class MainFrame extends JFrame {
         boolean available = availableOperations.contains(operation);
         evaluationPanel.setVisible(operation == OperationType.EVALUATE);
         derivativePanel.setVisible(operation == OperationType.DERIVATIVE);
+        integralPanel.setVisible(operation == OperationType.DEFINITE_INTEGRAL);
+        noParametersLabel.setVisible(operation == OperationType.INDEFINITE_INTEGRAL && available);
         unavailableLabel.setVisible(!available);
         actionPanel.setCalculateEnabled(available);
         parametersPanel.revalidate();
@@ -214,6 +227,13 @@ public class MainFrame extends JFrame {
         return derivativePanel;
     }
 
+    /**
+     * Parámetros del modo «Integral definida».
+     */
+    public IntegralPanel getIntegralPanel() {
+        return integralPanel;
+    }
+
     // ------------------------------------------------------------ acciones
 
     /**
@@ -224,6 +244,7 @@ public class MainFrame extends JFrame {
         inputPanel.onEnter(listener);
         evaluationPanel.onEnter(listener);
         derivativePanel.onEnter(listener);
+        integralPanel.onEnter(listener);
     }
 
     public void onClear(Runnable listener) {
@@ -232,15 +253,27 @@ public class MainFrame extends JFrame {
 
     // ------------------------------------------------------------ resultado
 
+    /**
+     * Muestra el resultado y el procedimiento. Se conserva la pestaña que el
+     * usuario tenga abierta (Procedimiento o Gráfica).
+     */
     public void showResult(String summary, List<SolutionStep> steps) {
         resultPanel.showResult(summary);
         stepsPanel.showSteps(steps);
-        bottomTabs.setSelectedComponent(stepsPanel);
+    }
+
+    public void showGraph(Graph graph) {
+        graphPanel.showGraph(graph);
+    }
+
+    public void clearGraph() {
+        graphPanel.clear();
     }
 
     public void clearResult() {
         resultPanel.clear();
         stepsPanel.clear();
+        graphPanel.clear();
     }
 
     /**
@@ -250,6 +283,7 @@ public class MainFrame extends JFrame {
         inputPanel.clear();
         evaluationPanel.clearError();
         derivativePanel.clearError();
+        integralPanel.clearError();
         clearResult();
     }
 
@@ -301,6 +335,7 @@ public class MainFrame extends JFrame {
         palette.install();
         FlatLaf.updateUI();
         resultPanel.setColors(palette.getResultBackground(), palette.getResultForeground());
+        graphPanel.setColors(palette.getGraphColors());
         palette.save(ColorPalette.userPreferences());
     }
 

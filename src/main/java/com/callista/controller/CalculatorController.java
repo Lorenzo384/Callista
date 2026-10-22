@@ -29,7 +29,9 @@ public class CalculatorController {
         this.model = model;
         this.operations = Map.of(
                 OperationType.EVALUATE, new EvaluationController(view, model),
-                OperationType.DERIVATIVE, new DerivativeController(view, model));
+                OperationType.DERIVATIVE, new DerivativeController(view, model),
+                OperationType.INDEFINITE_INTEGRAL, new IndefiniteIntegralController(model),
+                OperationType.DEFINITE_INTEGRAL, new IntegralController(view, model));
 
         view.setOperations(OperationType.values(), model.getSupportedOperations());
         view.onOperationChanged(this::changeOperation);
@@ -84,6 +86,7 @@ public class CalculatorController {
         Optional<CalculationResult> result = operations.get(operation).calculate(function);
         if (result.isPresent()) {
             view.showResult(result.get().getSummary(), result.get().getSteps());
+            result.get().getGraph().ifPresentOrElse(view::showGraph, view::clearGraph);
             view.setStatus("Listo");
         } else {
             view.clearResult();

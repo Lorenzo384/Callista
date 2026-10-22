@@ -34,6 +34,16 @@ public final class FunctionCall implements Expression {
         return argument.dependsOnVariable();
     }
 
+    @Override
+    public Expression replace(Expression target, Expression replacement) {
+        return equals(target) ? replacement : new FunctionCall(function, argument.replace(target, replacement));
+    }
+
+    @Override
+    public boolean contains(Expression part) {
+        return equals(part) || argument.contains(part);
+    }
+
     /**
      * El argumento ya va entre paréntesis, así que la llamada nunca necesita
      * paréntesis extra: {@code sin(x)^2}, {@code -ln(x)}.

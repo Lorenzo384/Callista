@@ -1,6 +1,10 @@
 package com.callista.model;
 
 import com.callista.model.entity.CalculationResult;
+import com.callista.model.entity.CurveStyle;
+import com.callista.model.entity.Graph;
+import com.callista.model.entity.GraphCurve;
+import com.callista.model.entity.GraphPoint;
 import com.callista.model.entity.OperationType;
 import com.callista.model.entity.SolutionStep;
 import com.callista.model.exception.InvalidExpressionException;
@@ -21,8 +25,9 @@ class CalculatorModelTest {
     private final CalculatorModel model = new CalculatorModel();
 
     @Test
-    void supportsEvaluationAndDerivatives() {
-        assertEquals(Set.of(OperationType.EVALUATE, OperationType.DERIVATIVE), model.getSupportedOperations());
+    void supportsEvaluationDerivativesAndDefiniteIntegrals() {
+        assertEquals(Set.of(OperationType.EVALUATE, OperationType.DERIVATIVE, OperationType.INDEFINITE_INTEGRAL,
+                OperationType.DEFINITE_INTEGRAL), model.getSupportedOperations());
     }
 
     @Test
@@ -100,7 +105,8 @@ class CalculatorModelTest {
     void evaluatesTheDerivativeAtAPoint() throws InvalidExpressionException {
         CalculationResult result = model.derive(model.interpret("x^2*sen(3x)"), 1, Math.PI);
         assertEquals("f'(3.141592654) = -29.6088132", result.getSummary());
-        assertTrue(result.getSteps().getLast().getDescription().startsWith("Evaluar en x = 3.141592654"));
+        assertTrue(result.getSteps().stream()
+                .anyMatch(step -> step.getDescription().startsWith("Evaluar en x = 3.141592654")));
 
         CalculationResult undefined = model.derive(model.interpret("ln(x)"), 1, 0);
         assertEquals("f'(0) no está definida", undefined.getSummary());
@@ -135,5 +141,59 @@ class CalculatorModelTest {
         List<SolutionStep> steps = model.derive(model.interpret("x^3 - 4x + ln(x)"), 3).getSteps();
         assertTrue(steps.stream().map(SolutionStep::getDescription)
                 .anyMatch(step -> step.equals("Simplificar (aplicar leyes de los exponentes): f'''(x) = 6 + 2/x^3")));
+    }
+
+    @Test
+    void evaluationGraphsTheFunctionAndThePoint() throws InvalidExpressionException {
+        Graph graph = model.evaluate(model.interpret("x^2"), 3).getGraph().orElseThrow();
+        assertEquals(List.of("f(x) = x^2"), graph.curves().stream().map(GraphCurve::label).toList());
+        assertEquals(List.of(new GraphPoint("(3, 9)", 3, 9)), graph.points());
+        assertTrue(graph.xRange().contains(3));
+    }
+
+    @Test
+    void derivativeGraphsTheFunctionAndItsDerivative() throws InvalidExpressionException {
+        Graph graph = model.derive(model.interpret("3x^2 + sen(x)"), 1).getGraph().orElseThrow();
+        assertEquals(List.of(CurveStyle.FUNCTION, CurveStyle.DERIVATIVE),
+                graph.curves().stream().map(GraphCurve::style).toList());
+        assertEquals("f'(x) = 6*x + cos(x)", graph.curves().get(1).label());
+        assertTrue(graph.points().isEmpty());
+    }
+
+    @Test
+    void derivativeAtAPointAddsTheTangentLine() throws InvalidExpressionException {
+        CalculationResult result = model.derive(model.interpret("x^2"), 1, 1);
+        Graph graph = result.getGraph().orElseThrow();
+
+        GraphCurve tangent = graph.curves().getLast();
+        assertEquals(CurveStyle.TANGENT, tangent.style());
+        assertEquals("Tangente: y = 2*x - 1", tangent.label());
+        assertEquals(2, graph.points().size());
+        assertTrue(result.getSteps().stream().map(SolutionStep::getDescription).anyMatch(step ->
+                step.equals("Recta tangente en x = 1: y = f(1) + f'(1)*(x - 1) = 1 + 2*(x - 1) = 2*x - 1")));
+    }
+
+    @Test
+    void theTangentTouchesTheCurveWithTheRightSlope() throws InvalidExpressionException {
+        Expression function = model.interpret("sen(x)*e^x");
+        double a = 0.7;
+        GraphCurve tangent = model.derive(function, 1, a).getGraph().orElseThrow().curves().getLast();
+        double slope = tangent.expression().evaluate(a + 1) - tangent.expression().evaluate(a);
+        assertEquals(function.evaluate(a), tangent.expression().evaluate(a), 1e-8);
+        assertEquals(Math.exp(a) * (Math.sin(a) + Math.cos(a)), slope, 1e-8);
+    }
+
+    @Test
+    void higherOrderDerivativesHaveNoTangent() throws InvalidExpressionException {
+        Graph graph = model.derive(model.interpret("x^3"), 2, 1).getGraph().orElseThrow();
+        assertTrue(graph.curves().stream().noneMatch(c -> c.style() == CurveStyle.TANGENT));
+        assertEquals(1, graph.points().size());
+    }
+
+    @Test
+    void keepsConstantsExact() throws InvalidExpressionException {
+        assertEquals("π/2", model.interpretConstant("pi/2").toString());
+        assertThrows(InvalidExpressionException.class, () -> model.interpretConstant("x + 1"));
+        assertThrows(InvalidExpressionException.class, () -> model.interpretConstant("ln(0)"));
     }
 }

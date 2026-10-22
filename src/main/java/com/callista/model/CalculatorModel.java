@@ -1,13 +1,24 @@
 package com.callista.model;
 
 import com.callista.model.calculus.derivative.DerivativeCalculator;
+import com.callista.model.calculus.integral.DefiniteIntegral;
+import com.callista.model.calculus.integral.IndefiniteIntegral;
+import com.callista.model.calculus.numeric.NumericalMethod;
 import com.callista.model.entity.CalculationResult;
+import com.callista.model.entity.CurveStyle;
+import com.callista.model.entity.Graph;
+import com.callista.model.entity.GraphCurve;
+import com.callista.model.entity.GraphPoint;
 import com.callista.model.entity.OperationType;
 import com.callista.model.entity.SolutionStep;
 import com.callista.model.exception.InvalidExpressionException;
+import com.callista.model.exception.ParameterException;
+import com.callista.model.expression.Constant;
 import com.callista.model.expression.Expression;
 import com.callista.model.expression.SimplificationRule;
 import com.callista.model.expression.Simplifier;
+import com.callista.model.expression.Variable;
+import com.callista.model.graph.Range;
 import com.callista.model.parser.ExpressionParser;
 import com.callista.util.FormatUtils;
 
@@ -23,15 +34,23 @@ import java.util.Set;
  */
 public class CalculatorModel {
 
+    /** Intervalo de x que se grafica cuando no hay un punto de interés. */
+    private static final Range DEFAULT_X_RANGE = new Range(-10, 10);
+    /** Ancho del intervalo de x alrededor de un punto de interés. */
+    private static final double POINT_X_WIDTH = 12;
+
     /** Orden máximo de derivada que se puede pedir. */
     public static final int MAX_DERIVATIVE_ORDER = 3;
 
     private static final Set<OperationType> SUPPORTED =
-            EnumSet.of(OperationType.EVALUATE, OperationType.DERIVATIVE);
+            EnumSet.of(OperationType.EVALUATE, OperationType.DERIVATIVE,
+                    OperationType.INDEFINITE_INTEGRAL, OperationType.DEFINITE_INTEGRAL);
     private static final String[] ORDINALS = {"", "Primera", "Segunda", "Tercera"};
 
     private final ExpressionParser parser = new ExpressionParser();
     private final DerivativeCalculator derivativeCalculator = new DerivativeCalculator();
+    private final DefiniteIntegral definiteIntegral = new DefiniteIntegral();
+    private final IndefiniteIntegral indefiniteIntegral = new IndefiniteIntegral();
 
     /**
      * Operaciones ya implementadas; el resto se muestran como «próximamente».
@@ -57,9 +76,19 @@ public class CalculatorModel {
      *                                    número real (por ejemplo, si contiene x)
      */
     public double interpretValue(String text) throws InvalidExpressionException {
-        // Se evalúa con x = NaN: si el valor depende de x, el resultado será NaN.
-        double value = parser.parse(text).evaluate(Double.NaN);
-        if (!Double.isFinite(value)) {
+        return interpretConstant(text).evaluate(0);
+    }
+
+    /**
+     * Interpreta un valor sin evaluarlo, para conservarlo exacto: {@code pi/2}
+     * sigue siendo {@code π/2}.
+     *
+     * @throws InvalidExpressionException si el texto no es válido, contiene x
+     *                                    o no da un número real
+     */
+    public Expression interpretConstant(String text) throws InvalidExpressionException {
+        Expression value = parser.parse(text);
+        if (value.dependsOnVariable() || !Double.isFinite(value.evaluate(0))) {
             throw new InvalidExpressionException(
                     "El valor debe ser un número real, por ejemplo 2, -1.5 o pi/2", 1);
         }
@@ -84,7 +113,12 @@ public class CalculatorModel {
                 new SolutionStep(conclusion));
 
         String summary = defined ? image + " = " + FormatUtils.formatNumber(y) : image + " no está definida";
-        return new CalculationResult(summary, steps);
+        List<GraphPoint> points = defined
+                ? List.of(new GraphPoint(pointLabel(x, y), x, y))
+                : List.of();
+        Graph graph = new Graph(List.of(new GraphCurve("f(x) = " + function, function, CurveStyle.FUNCTION)),
+                points, Range.centeredAt(x, POINT_X_WIDTH));
+        return new CalculationResult(summary, steps, graph);
     }
 
     /**
@@ -125,21 +159,64 @@ public class CalculatorModel {
         }
 
         String name = derivativeName(order);
+        List<GraphCurve> curves = new ArrayList<>(List.of(
+                new GraphCurve("f(x) = " + function, function, CurveStyle.FUNCTION),
+                new GraphCurve(name + " = " + current, current, CurveStyle.DERIVATIVE)));
         if (point.isEmpty()) {
-            return new CalculationResult(name + " = " + current, steps);
+            return new CalculationResult(name + " = " + current, steps, new Graph(curves, List.of(), DEFAULT_X_RANGE));
         }
 
         double x = point.getAsDouble();
         double value = current.evaluate(x);
-        String image = name.replace("(x)", "(" + FormatUtils.formatNumber(x) + ")");
+        String at = FormatUtils.formatNumber(x);
+        String image = name.replace("(x)", "(" + at + ")");
+        Range xRange = Range.centeredAt(x, POINT_X_WIDTH);
         if (!Double.isFinite(value)) {
-            steps.add(new SolutionStep(image + " no está definida: x = " + FormatUtils.formatNumber(x)
+            steps.add(new SolutionStep(image + " no está definida: x = " + at
                     + " está fuera del dominio de la derivada"));
-            return new CalculationResult(image + " no está definida", steps);
+            return new CalculationResult(image + " no está definida", steps, new Graph(curves, List.of(), xRange));
         }
         String result = image + " = " + FormatUtils.formatNumber(value);
-        steps.add(new SolutionStep("Evaluar en x = " + FormatUtils.formatNumber(x) + ": " + result));
-        return new CalculationResult(result, steps);
+        steps.add(new SolutionStep("Evaluar en x = " + at + ": " + result));
+
+        List<GraphPoint> points = new ArrayList<>();
+        points.add(new GraphPoint(pointLabel(x, value), x, value));
+        double fx = function.evaluate(x);
+        if (order == 1 && Double.isFinite(fx)) {
+            Expression tangent = tangentLine(x, fx, value, steps);
+            curves.add(new GraphCurve("Tangente: y = " + tangent, tangent, CurveStyle.TANGENT));
+            points.add(new GraphPoint(pointLabel(x, fx), x, fx));
+        }
+        return new CalculationResult(result, steps, new Graph(curves, points, xRange));
+    }
+
+    /**
+     * Recta tangente a f en x = a, escrita como {@code y = m*x + b} con
+     * {@code m = f'(a)} y {@code b = f(a) - m*a}. Agrega el paso que la
+     * explica. Los valores se redondean como se muestran
+     * ({@value FormatUtils#SIGNIFICANT_DIGITS} cifras) para que la ecuación
+     * sea legible.
+     */
+    private static Expression tangentLine(double a, double fa, double slope, List<SolutionStep> steps) {
+        Variable x = new Variable("x");
+        Constant m = rounded(slope);
+        Expression xMinusA = Simplifier.difference(x, rounded(a));
+        Expression substituted = Simplifier.sum(rounded(fa), Simplifier.product(m, xMinusA));
+        Expression line = Simplifier.sum(Simplifier.product(m, x), rounded(fa - m.getValue() * a));
+        String at = FormatUtils.formatNumber(a);
+        String factor = xMinusA instanceof Variable ? xMinusA.toString() : "(" + xMinusA + ")";
+        steps.add(new SolutionStep("Recta tangente en x = " + at + ": y = f(" + at + ") + f'(" + at + ")*"
+                + factor + " = " + substituted + (line.equals(substituted) ? "" : " = " + line)));
+        return line;
+    }
+
+    /** Etiqueta breve de un punto en la gráfica: {@code (1.047, 0.866)}. */
+    private static String pointLabel(double x, double y) {
+        return "(" + FormatUtils.formatShort(x) + ", " + FormatUtils.formatShort(y) + ")";
+    }
+
+    private static Constant rounded(double value) {
+        return new Constant(Double.parseDouble(FormatUtils.formatNumber(value)));
     }
 
     /**
@@ -167,6 +244,45 @@ public class CalculatorModel {
             return parts.getFirst();
         }
         return String.join(", ", parts.subList(0, parts.size() - 1)) + " y " + parts.getLast();
+    }
+
+    /**
+     * Integral indefinida {@code ∫f(x) dx = F(x) + C}, con procedimiento y
+     * comprobación por derivación.
+     */
+    public CalculationResult integrate(Expression function) {
+        return indefiniteIntegral.solve(function);
+    }
+
+    /**
+     * Integral definida exacta con el Teorema Fundamental del Cálculo.
+     *
+     * @param a límite inferior, sin evaluar (ver {@link #interpretConstant})
+     * @param b límite superior, sin evaluar
+     */
+    public CalculationResult exactIntegral(Expression function, Expression a, Expression b) {
+        return definiteIntegral.exact(function, a, b);
+    }
+
+    /**
+     * Aproxima {@code ∫[a, b] f(x) dx} con un método numérico y explica cada paso.
+     *
+     * @param n número de subintervalos
+     * @throws ParameterException si {@code n} no es válido (por ejemplo, impar en Simpson)
+     */
+    public CalculationResult approximateIntegral(Expression function, double a, double b,
+                                                 NumericalMethod method, int n) throws ParameterException {
+        return definiteIntegral.approximate(function, a, b, method, n);
+    }
+
+    /**
+     * Aproxima {@code ∫[a, b] f(x) dx} con los tres métodos y los compara.
+     *
+     * @throws ParameterException si {@code n} no es válido
+     */
+    public CalculationResult compareIntegrationMethods(Expression function, double a, double b, int n)
+            throws ParameterException {
+        return definiteIntegral.compare(function, a, b, n);
     }
 
     /** {@code f(x)}, {@code f'(x)}, {@code f''(x)}… */

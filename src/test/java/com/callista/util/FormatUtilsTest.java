@@ -1,5 +1,6 @@
 package com.callista.util;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -32,5 +33,23 @@ class FormatUtilsTest {
     })
     void formatsSpecialValues(double value, String expected) {
         assertEquals(expected, FormatUtils.formatNumber(value));
+    }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "1.0471975511965976  | 1.047",
+            "0.8660254037844386  | 0.866",
+            "12.909297426825681  | 12.91",
+            "2                   | 2",
+    })
+    void formatsShortNumbersForLabels(double value, String expected) {
+        assertEquals(expected, FormatUtils.formatShort(value));
+    }
+
+    @Test
+    void writesSubscripts() {
+        assertEquals("₀", FormatUtils.subscript(0));
+        assertEquals("₁₂", FormatUtils.subscript(12));
+        assertEquals("₁₀₀₀₀", FormatUtils.subscript(10000));
     }
 }

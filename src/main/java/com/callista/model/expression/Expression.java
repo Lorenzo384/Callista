@@ -44,6 +44,18 @@ public interface Expression {
     boolean dependsOnVariable();
 
     /**
+     * Copia de la expresión donde cada aparición de {@code target} se cambia
+     * por {@code replacement}. Se usa en la sustitución: cambiar {@code x^2}
+     * por {@code u}, o regresar de {@code u} a {@code x^2}.
+     */
+    Expression replace(Expression target, Expression replacement);
+
+    /**
+     * Indica si {@code part} aparece en el árbol (incluida la expresión entera).
+     */
+    boolean contains(Expression part);
+
+    /**
      * Prioridad del operador de este nodo; un valor mayor se agrupa primero.
      * Se usa para decidir dónde hacen falta paréntesis al convertir a texto.
      *

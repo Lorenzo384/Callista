@@ -15,6 +15,11 @@ public final class Product extends BinaryOperation {
     }
 
     @Override
+    public BinaryOperation withOperands(Expression left, Expression right) {
+        return new Product(left, right);
+    }
+
+    @Override
     public int precedence() {
         return MULTIPLICATIVE;
     }

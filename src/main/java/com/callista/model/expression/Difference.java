@@ -15,6 +15,11 @@ public final class Difference extends BinaryOperation {
     }
 
     @Override
+    public BinaryOperation withOperands(Expression left, Expression right) {
+        return new Difference(left, right);
+    }
+
+    @Override
     public int precedence() {
         return ADDITIVE;
     }

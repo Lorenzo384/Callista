@@ -32,6 +32,16 @@ public final class Variable implements Expression {
     }
 
     @Override
+    public Expression replace(Expression target, Expression replacement) {
+        return equals(target) ? replacement : this;
+    }
+
+    @Override
+    public boolean contains(Expression part) {
+        return equals(part);
+    }
+
+    @Override
     public int precedence() {
         return ATOM;
     }

@@ -33,6 +33,26 @@ public abstract class BinaryOperation implements Expression {
         return left.dependsOnVariable() || right.dependsOnVariable();
     }
 
+    @Override
+    public Expression replace(Expression target, Expression replacement) {
+        if (equals(target)) {
+            return replacement;
+        }
+        return withOperands(left.replace(target, replacement), right.replace(target, replacement));
+    }
+
+    @Override
+    public boolean contains(Expression part) {
+        return equals(part) || left.contains(part) || right.contains(part);
+    }
+
+    /**
+     * La misma operación con otros operandos: {@code Sum} crea una
+     * {@code Sum}, {@code Power} una {@code Power}… (método fábrica que cada
+     * subclase define).
+     */
+    public abstract BinaryOperation withOperands(Expression left, Expression right);
+
     /**
      * Símbolo del operador, por ejemplo {@code "+"} o {@code "^"}.
      */
@@ -62,7 +82,7 @@ public abstract class BinaryOperation implements Expression {
         boolean rightTie = !isRightAssociative() && !isAssociative();
         return wrap(left, needsParentheses(left, isRightAssociative()))
                 + separator
-                + wrap(right, needsParentheses(right, rightTie) || isNegative(right));
+                + wrap(right, needsParentheses(right, rightTie) || isNegative(right) || isNestedPower(right));
     }
 
     /**
@@ -98,6 +118,14 @@ public abstract class BinaryOperation implements Expression {
      */
     private static boolean isNegative(Expression expression) {
         return expression.precedence() == UNARY;
+    }
+
+    /**
+     * Un exponente que es a su vez una potencia se encierra para que se lea
+     * sin ambigüedad: {@code e^(x^2)} en lugar de {@code e^x^2}.
+     */
+    private boolean isNestedPower(Expression right) {
+        return this instanceof Power && right instanceof Power;
     }
 
     private static String wrap(Expression expression, boolean parentheses) {

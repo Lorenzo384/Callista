@@ -61,6 +61,7 @@ class SimplifyTest {
             "pi*x*2                 | 2*π*x",
             "x^-2                   | 1/x^2",
             "-(x+1)                 | -x - 1",
+            "0.5403023059*x + 1     | 0.5403023059*x + 1",
     })
     void simplifiesToTextbookForm(String input, String expected) throws InvalidExpressionException {
         assertEquals(expected, simplify(input));
@@ -77,12 +78,51 @@ class SimplifyTest {
 
     @ParameterizedTest
     @CsvSource(delimiter = '|', value = {
-            "(x^2)^(1/2)          | vale abs(x), no x",
             "sen(x)^2 + cos(x)^2  | identidades trigonométricas fuera de alcance",
             "1/0                  | división entre cero",
     })
     void doesNotChangeWhatItShouldNot(String text, String reason) throws InvalidExpressionException {
         assertEquals(parser.parse(text).toString(), simplify(text), reason);
+    }
+
+    @Test
+    void squareRootOfASquareIsNotSimplifiedToX() throws InvalidExpressionException {
+        // √(x²) = |x|, no x: solo cambia la forma de escribir el exponente 1/2
+        assertEquals("sqrt(x^2)", simplify("(x^2)^(1/2)"));
+        assertEquals("sqrt(x^2)", simplify("sqrt(x^2)"));
+    }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "sqrt(x)*sqrt(x)      | x",
+            "sqrt(x)*x            | x^(3/2)",
+            "x^(1/2)              | sqrt(x)",
+            "1/sqrt(x)            | 1/sqrt(x)",
+            "x/sqrt(x)            | sqrt(x)",
+    })
+    void treatsSquareRootsAsPowersOfOneHalf(String input, String expected) throws InvalidExpressionException {
+        assertEquals(expected, simplify(input));
+    }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "x*(x + 1)            | x^2 + x",
+            "(x + 1)^2            | x^2 + 2*x + 1",
+            "(x - 1)*(x + 1)      | x^2 - 1",
+            "(x^2 + 1)/x          | x + 1/x",
+            "2*(x + 3) - 6        | 2*x",
+    })
+    void expandsProductsOfSums(String input, String expected) throws InvalidExpressionException {
+        assertEquals(expected, Simplifier.expand(parser.parse(input)).toString());
+    }
+
+    @Test
+    void exposesTheTerms() throws InvalidExpressionException {
+        var terms = Simplifier.terms(parser.parse("3*pi*x^2 - sin(x)"));
+        assertEquals(2, terms.size());
+        assertEquals("3*π", terms.getFirst().constantPart().toExpression().toString());
+        assertEquals("x^2", terms.getFirst().variablePart().toExpression().toString());
+        assertEquals("-sin(x)", terms.get(1).toExpression().toString());
     }
 
     /**
