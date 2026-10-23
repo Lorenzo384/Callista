@@ -154,6 +154,7 @@ public class MainFrame extends JFrame {
         setMinimumSize(new Dimension(400, 700));
         setSize(440, 780);
         setLocationRelativeTo(null);
+        installIcon();
 
         statusLabel.setForeground(ViewStyles.secondaryTextColor());
         unavailableLabel.setForeground(ViewStyles.secondaryTextColor());
@@ -347,6 +348,35 @@ public class MainFrame extends JFrame {
 
     public void setStatus(String status) {
         statusLabel.setText(STATUS_PREFIX + status);
+    }
+
+    // ------------------------------------------------------------ icono
+
+    /**
+     * Pone el icono en la ventana (barra de tareas de Windows/Linux) y en el
+     * Dock de macOS. El ejecutable empaquetado ya trae su propio icono; esto
+     * cubre también la ejecución desde el IDE o con {@code gradlew run}.
+     */
+    private void installIcon() {
+        Image icon = loadIcon("/icon/callista.png");
+        if (icon != null) {
+            setIconImages(List.of(
+                    icon.getScaledInstance(16, 16, Image.SCALE_SMOOTH),
+                    icon.getScaledInstance(32, 32, Image.SCALE_SMOOTH),
+                    icon.getScaledInstance(64, 64, Image.SCALE_SMOOTH),
+                    icon.getScaledInstance(256, 256, Image.SCALE_SMOOTH)));
+        }
+
+        Image dockIcon = loadIcon("/icon/callista-macos.png");
+        if (dockIcon != null && Taskbar.isTaskbarSupported()
+                && Taskbar.getTaskbar().isSupported(Taskbar.Feature.ICON_IMAGE)) {
+            Taskbar.getTaskbar().setIconImage(dockIcon);
+        }
+    }
+
+    private static Image loadIcon(String resource) {
+        java.net.URL url = MainFrame.class.getResource(resource);
+        return url == null ? null : new ImageIcon(url).getImage();
     }
 
     // ------------------------------------------------------------ menú

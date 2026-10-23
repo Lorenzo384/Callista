@@ -39,3 +39,57 @@ tasks.withType(JavaCompile).configureEach {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+// ------------------------------------------------------------------ ejecutable
+// Programa instalable con su propio Java incluido (jpackage del JDK).
+//   ./gradlew jpackage                      → instalador del sistema actual (.dmg en macOS, .exe en Windows)
+//   ./gradlew jpackage -PpackageType=app-image → solo la aplicación, sin instalador
+// Resultado en build/jpackage/. Cada sistema se empaqueta en sí mismo: el .exe se genera en Windows
+// (requiere WiX Toolset). Los íconos de packaging/ se regeneran con docs/herramientas/GenIcons.java.
+def isWindows = System.getProperty('os.name').toLowerCase().contains('win')
+def isMac = System.getProperty('os.name').toLowerCase().contains('mac')
+
+tasks.register('jpackage', Exec) {
+    group = 'distribution'
+    description = 'Crea el ejecutable de Callista con jpackage.'
+    dependsOn tasks.named('installDist')
+
+    def libDir = layout.buildDirectory.dir('install/Callista/lib')
+    def outputDir = layout.buildDirectory.dir('jpackage')
+    def jpackageTool = javaToolchains.launcherFor { languageVersion = JavaLanguageVersion.of(25) }
+            .map { it.metadata.installationPath.file(isWindows ? 'bin/jpackage.exe' : 'bin/jpackage').asFile.path }
+    def type = providers.gradleProperty('packageType').orElse(isWindows ? 'exe' : isMac ? 'dmg' : 'app-image')
+
+    inputs.property('packageType', type)
+    inputs.dir(libDir)
+    inputs.dir('packaging')
+    outputs.dir(outputDir)
+
+    doFirst {
+        delete outputDir
+        executable = jpackageTool.get()
+        args = [
+                '--type', type.get(),
+                '--name', 'Callista',
+                // macOS exige que la versión empiece en 1 o más
+                '--app-version', '1.0.0',
+                '--vendor', 'Callista',
+                '--description', 'Calculadora educativa de Cálculo II',
+                '--input', libDir.get().asFile.path,
+                '--main-jar', "Callista-${version}.jar",
+                '--main-class', application.mainClass.get(),
+                '--java-options', '--enable-native-access=ALL-UNNAMED',
+                // Solo los módulos del JDK que usa el programa (jdeps), para que pese menos
+                '--add-modules', 'java.base,java.desktop,java.prefs',
+                '--dest', outputDir.get().asFile.path
+        ]
+        if (isMac) {
+            args += ['--icon', file('packaging/macos/Callista.icns').path]
+        } else if (isWindows) {
+            args += ['--icon', file('packaging/windows/Callista.ico').path]
+            if (type.get() != 'app-image') {
+                args += ['--win-menu', '--win-shortcut', '--win-dir-chooser']
+            }
+        }
+    }
+}
