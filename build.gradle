@@ -45,7 +45,7 @@ tasks.named('test') {
 //   ./gradlew jpackage                      → instalador del sistema actual (.dmg en macOS, .exe en Windows)
 //   ./gradlew jpackage -PpackageType=app-image → solo la aplicación, sin instalador
 // Resultado en build/jpackage/. Cada sistema se empaqueta en sí mismo: el .exe se genera en Windows
-// (requiere WiX Toolset). Los íconos de packaging/ se regeneran con docs/herramientas/GenIcons.java.
+// (requiere WiX Toolset). Los íconos de packaging/ se regeneran con packaging/GenIcons.java.
 def isWindows = System.getProperty('os.name').toLowerCase().contains('win')
 def isMac = System.getProperty('os.name').toLowerCase().contains('mac')
 
