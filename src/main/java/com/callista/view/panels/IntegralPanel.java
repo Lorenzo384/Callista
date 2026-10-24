@@ -32,6 +32,7 @@ public class IntegralPanel {
     private JTextField lowerField;
     private JTextField upperField;
     private JComboBox<Object> methodComboBox;
+    private JComboBox<String> variableComboBox;
     private JSpinner subintervalsSpinner;
     private JTextArea hintArea;
 
@@ -51,7 +52,7 @@ public class IntegralPanel {
      */
     private void $$$setupUI$$$() {
         rootPanel = new JPanel();
-        rootPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(3, 4, new Insets(0, 0, 0, 0), -1, -1));
+        rootPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(4, 4, new Insets(0, 0, 0, 0), -1, -1));
         final JLabel label1 = new JLabel();
         label1.setText("a =");
         rootPanel.add(label1, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -78,6 +79,31 @@ public class IntegralPanel {
         subintervalsSpinner = new JSpinner();
         subintervalsSpinner.setToolTipText("Número de subintervalos");
         rootPanel.add(subintervalsSpinner, new com.intellij.uiDesigner.core.GridConstraints(1, 3, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(60, -1), null, 0, false));
+        final JLabel variableLabel = new JLabel();
+        variableLabel.setText("Integrar respecto de:");
+
+        rootPanel.add(variableLabel,
+                new com.intellij.uiDesigner.core.GridConstraints(
+                        2, 0, 1, 2,
+                        com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST,
+                        com.intellij.uiDesigner.core.GridConstraints.FILL_NONE,
+                        com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED,
+                        com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED,
+                        null, null, null, 0, false));
+
+        variableComboBox = new JComboBox<>();
+        variableComboBox.setToolTipText(
+                "Variable respecto de la que se integra");
+
+        rootPanel.add(variableComboBox,
+                new com.intellij.uiDesigner.core.GridConstraints(
+                        2, 2, 1, 2,
+                        com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST,
+                        com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL,
+                        com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW
+                                | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW,
+                        com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED,
+                        null, null, null, 0, false));
         hintArea = new JTextArea();
         hintArea.setEditable(false);
         hintArea.setFocusable(false);
@@ -85,7 +111,7 @@ public class IntegralPanel {
         hintArea.setOpaque(false);
         hintArea.setText("a y b aceptan pi/2, inf o -inf (impropias, con Exacto). n es para los métodos numéricos.");
         hintArea.setWrapStyleWord(true);
-        rootPanel.add(hintArea, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 4, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, new Dimension(50, 34), new Dimension(150, 34), null, 0, false));
+        rootPanel.add(hintArea, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 4, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, new Dimension(50, 34), new Dimension(150, 34), null, 0, false));
     }
 
     /**
@@ -103,6 +129,11 @@ public class IntegralPanel {
         }
         methods.addElement(COMPARE);
         methodComboBox.setModel(methods);
+        variableComboBox.setModel(
+                new DefaultComboBoxModel<>(new String[]{"x", "y"}));
+
+        variableComboBox.setSelectedItem("x");
+        variableComboBox.addActionListener(e -> clearError());
         methodComboBox.addActionListener(e -> subintervalsSpinner.setEnabled(!isExactSelected()));
         subintervalsSpinner.setEnabled(false);
         subintervalsSpinner.setModel(new SpinnerNumberModel(DEFAULT_SUBINTERVALS, 1, 100_000, 1));
@@ -138,6 +169,20 @@ public class IntegralPanel {
 
     public String getUpperText() {
         return upperField.getText();
+    }
+    /**
+     * Variable respecto de la que se calcula la integral definida.
+     */
+    public String getVariableName() {
+        return String.valueOf(variableComboBox.getSelectedItem());
+    }
+
+    /**
+     * Muestra un aviso general en el área de ayuda.
+     */
+    public void showGeneralError(String message) {
+        hintArea.setForeground(ViewStyles.ERROR_COLOR);
+        hintArea.setText(message);
     }
 
     /**

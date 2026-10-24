@@ -56,9 +56,11 @@ public class DerivativeCalculator {
     }
 
     /**
-     * @param variableName nombre de la variable, solo para escribir los pasos
-     *                     ({@code d/dx}, {@code d/dt}…)
+     * @param variableName nombre de la variable respecto de la que se deriva.
+     *                     También se utiliza para escribir los pasos
+     *                     ({@code d/dx}, {@code d/dy}, {@code d/dt}…).
      */
+
     public DerivativeCalculator(String variableName) {
         this.variableName = Objects.requireNonNull(variableName, "variableName");
     }
@@ -92,7 +94,7 @@ public class DerivativeCalculator {
         }
 
         private Expression derive(Expression e, int level) {
-            if (!e.dependsOnVariable()) {
+            if (!e.dependsOn(variableName)) {
                 String note = e instanceof Constant ? "" : " (no depende de " + variableName + ")";
                 record(level, DerivativeRule.CONSTANT, d(e) + " = 0" + note);
                 return ZERO;
@@ -155,11 +157,11 @@ public class DerivativeCalculator {
         private Expression deriveProduct(Product p, int level) {
             Expression f = p.getLeft();
             Expression g = p.getRight();
-            if (!f.dependsOnVariable()) {
+            if (!f.dependsOn(variableName)) {
                 record(level, DerivativeRule.CONSTANT_MULTIPLE, d(p) + " = " + factor(f) + "*" + d(g));
                 return product(f, derive(g, level + 1));
             }
-            if (!g.dependsOnVariable()) {
+            if (!g.dependsOn(variableName)) {
                 record(level, DerivativeRule.CONSTANT_MULTIPLE, d(p) + " = " + factor(g) + "*" + d(f));
                 return product(g, derive(f, level + 1));
             }
@@ -173,7 +175,7 @@ public class DerivativeCalculator {
         private Expression deriveQuotient(Quotient q, int level) {
             Expression f = q.getLeft();
             Expression g = q.getRight();
-            if (!g.dependsOnVariable()) {
+            if (!g.dependsOn(variableName)) {
                 record(level, DerivativeRule.CONSTANT_MULTIPLE, d(q) + " = " + d(f) + "/" + factor(g));
                 return quotient(derive(f, level + 1), g);
             }
@@ -189,7 +191,7 @@ public class DerivativeCalculator {
             Expression exponent = p.getRight();
 
             // x^n: la base depende de x y el exponente es constante
-            if (!exponent.dependsOnVariable()) {
+            if (!exponent.dependsOn(variableName)) {
                 Expression reduced = difference(exponent, ONE);
                 Expression outer = product(exponent, power(base, reduced));
                 if (base instanceof Variable) {
@@ -202,7 +204,7 @@ public class DerivativeCalculator {
             }
 
             // a^u: la base es constante y el exponente depende de x
-            if (!base.dependsOnVariable()) {
+            if (!base.dependsOn(variableName)) {
                 Expression outer = base == Constant.E ? p : product(p, call(MathFunction.LN, base));
                 if (exponent instanceof Variable) {
                     record(level, DerivativeRule.EXPONENTIAL, d(p) + " = " + outer);

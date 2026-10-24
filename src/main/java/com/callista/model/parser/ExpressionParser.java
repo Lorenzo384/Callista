@@ -162,7 +162,9 @@ public class ExpressionParser {
 
     private Expression parseIdentifier(Token token) throws InvalidExpressionException {
         String name = token.getText();
-        if (name.equals(variableName)) {
+        if (name.equals(variableName)
+                || name.equals("x")
+                || name.equals("y")) {
             return new Variable(name);
         }
         if (name.equalsIgnoreCase("pi") || name.equals("π")) {
@@ -283,7 +285,11 @@ public class ExpressionParser {
     }
 
     private boolean isKnownWord(String word) {
-        return word.equals(variableName) || isConstantName(word) || MathFunction.fromName(word).isPresent();
+        return word.equals(variableName)
+                || word.equals("x")
+                || word.equals("y")
+                || isConstantName(word)
+                || MathFunction.fromName(word).isPresent();
     }
 
     private static boolean isConstantName(String name) {

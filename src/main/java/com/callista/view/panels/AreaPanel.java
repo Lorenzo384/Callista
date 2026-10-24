@@ -16,7 +16,7 @@ import java.awt.*;
  */
 public class AreaPanel {
 
-    private static final String HINT = "g vacía = eje x. Deja a y b vacíos para la región que encierran f y g.";
+    private static final String HINT = "g vacía = 0. Deja a y b vacíos para usar los puntos de corte de f y g.";
 
     /** Campo donde se mostrará un error. */
     public enum Field {
@@ -27,6 +27,7 @@ public class AreaPanel {
     private JTextField secondFunctionField;
     private JTextField lowerField;
     private JTextField upperField;
+    private JComboBox<String> variableComboBox;
     private JTextArea hintArea;
 
     {
@@ -45,12 +46,12 @@ public class AreaPanel {
      */
     private void $$$setupUI$$$() {
         rootPanel = new JPanel();
-        rootPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(3, 4, new Insets(0, 0, 0, 0), -1, -1));
+        rootPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(4, 4, new Insets(0, 0, 0, 0), -1, -1));
         final JLabel label1 = new JLabel();
-        label1.setText("g(x) =");
+        label1.setText("g =");
         rootPanel.add(label1, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         secondFunctionField = new JTextField();
-        secondFunctionField.setToolTipText("Segunda curva; vacía es el eje x (g = 0)");
+        secondFunctionField.setToolTipText("Segunda curva; si la dejas vacía, g = 0");
         rootPanel.add(secondFunctionField, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 3, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         final JLabel label2 = new JLabel();
         label2.setText("a =");
@@ -64,14 +65,32 @@ public class AreaPanel {
         upperField = new JTextField();
         upperField.setToolTipText("Opcional: límite superior");
         rootPanel.add(upperField, new com.intellij.uiDesigner.core.GridConstraints(1, 3, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(60, -1), null, 0, false));
+        final JLabel variableLabel = new JLabel();
+        variableLabel.setText("Integrar respecto de:");
+        rootPanel.add(variableLabel, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1,
+                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST,
+                com.intellij.uiDesigner.core.GridConstraints.FILL_NONE,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        variableComboBox = new JComboBox<>();
+        variableComboBox.addItem("x");
+        variableComboBox.addItem("y");
+        variableComboBox.setToolTipText("Variable respecto de la que se calcula el área");
+        rootPanel.add(variableComboBox, new com.intellij.uiDesigner.core.GridConstraints(2, 1, 1, 3,
+                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST,
+                com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW
+                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW,
+                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null,
+                new Dimension(60, -1), null, 0, false));
         hintArea = new JTextArea();
         hintArea.setEditable(false);
         hintArea.setFocusable(false);
         hintArea.setLineWrap(true);
         hintArea.setOpaque(false);
-        hintArea.setText("g vacía = eje x. Deja a y b vacíos para la región que encierran f y g.");
+        hintArea.setText("g vacía = 0. Deja a y b vacíos para usar los puntos de corte de f y g.");
         hintArea.setWrapStyleWord(true);
-        rootPanel.add(hintArea, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 4, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, new Dimension(50, 34), new Dimension(150, 34), null, 0, false));
+        rootPanel.add(hintArea, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 4, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, new Dimension(50, 34), new Dimension(150, 34), null, 0, false));
     }
 
     /**
@@ -85,9 +104,11 @@ public class AreaPanel {
         secondFunctionField.setFont(ViewStyles.MATH_FONT);
         lowerField.setFont(ViewStyles.MATH_FONT);
         upperField.setFont(ViewStyles.MATH_FONT);
-        secondFunctionField.putClientProperty("JTextField.placeholderText", "0 (eje x)");
+        secondFunctionField.putClientProperty("JTextField.placeholderText", "0 (función cero)");
         lowerField.putClientProperty("JTextField.placeholderText", "1.er corte");
         upperField.putClientProperty("JTextField.placeholderText", "último corte");
+        variableComboBox.setFont(ViewStyles.MATH_FONT);
+        variableComboBox.addActionListener(e -> clearError());
         hintArea.setFont(hintArea.getFont().deriveFont(12f));
         clearError();
 
@@ -122,6 +143,10 @@ public class AreaPanel {
 
     public String getUpperText() {
         return upperField.getText();
+    }
+
+    public String getVariableName() {
+        return String.valueOf(variableComboBox.getSelectedItem());
     }
 
     /**

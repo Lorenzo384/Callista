@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -76,6 +77,36 @@ class IndefiniteIntegralTest {
     void integratesInTextbookForm(String function, String expected)
             throws InvalidExpressionException, UnsupportedIntegralException {
         assertEquals(expected, antiderivative(function));
+    }
+    @Test
+    void integratesMultivariableExpressionWithRespectToXAndY()
+            throws InvalidExpressionException, UnsupportedIntegralException {
+
+        Expression function = f("x^3 + 3y");
+
+        Expression integralX = integral.antiderivative(function, "x");
+        Expression integralY = integral.antiderivative(function, "y");
+
+        // ∫(x^3 + 3y) dx = x^4/4 + 3xy
+        assertEquals(28.0, integralX.evaluate(2.0, 4.0), 1e-9);
+
+        // ∫(x^3 + 3y) dy = x^3*y + 3*y^2/2
+        assertEquals(56.0, integralY.evaluate(2.0, 4.0), 1e-9);
+
+        double h = 1e-5;
+
+        double derivativeX =
+                (integralX.evaluate(2.0 + h, 4.0)
+                        - integralX.evaluate(2.0 - h, 4.0))
+                        / (2.0 * h);
+
+        double derivativeY =
+                (integralY.evaluate(2.0, 4.0 + h)
+                        - integralY.evaluate(2.0, 4.0 - h))
+                        / (2.0 * h);
+
+        assertEquals(20.0, derivativeX, 1e-4);
+        assertEquals(20.0, derivativeY, 1e-4);
     }
 
     /**

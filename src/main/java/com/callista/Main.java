@@ -8,7 +8,7 @@ import com.callista.view.MainFrame;
 import javax.swing.SwingUtilities;
 
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[ ] args) {
         // Apariencia FlatLaf Light con la última paleta elegida por el usuario
         ColorPalette palette = ColorPalette.load(ColorPalette.userPreferences());
         palette.install();

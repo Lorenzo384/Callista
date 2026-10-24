@@ -38,6 +38,8 @@ import java.util.Set;
  */
 public class CalculatorModel {
 
+
+
     /** Intervalo de x que se grafica cuando no hay un punto de interés. */
     private static final Range DEFAULT_X_RANGE = new Range(-10, 10);
     /** Ancho del intervalo de x alrededor de un punto de interés. */
@@ -151,136 +153,176 @@ public class CalculatorModel {
     }
 
     /**
-     * Deriva la función {@code order} veces y explica cada regla aplicada.
-     *
-     * @param order orden de la derivada, de 1 a {@value #MAX_DERIVATIVE_ORDER}
+     * Deriva la función order veces respecto de x.
      */
     public CalculationResult derive(Expression function, int order) {
-        return derive(function, order, OptionalDouble.empty());
+        return derive(function, order, OptionalDouble.empty(), "x");
     }
 
     /**
-     * Deriva la función {@code order} veces y evalúa la derivada en {@code point}.
-     *
-     * @param order orden de la derivada, de 1 a {@value #MAX_DERIVATIVE_ORDER}
+     * Deriva respecto de x y evalúa en un punto.
      */
     public CalculationResult derive(Expression function, int order, double point) {
-        return derive(function, order, OptionalDouble.of(point));
+        return derive(function, order, OptionalDouble.of(point), "x");
     }
 
-    private CalculationResult derive(Expression function, int order, OptionalDouble point) {
-        if (order < 1 || order > MAX_DERIVATIVE_ORDER) {
-            throw new IllegalArgumentException("Orden de derivada fuera de rango: " + order);
-        }
-        List<SolutionStep> steps = new ArrayList<>();
-        steps.add(new SolutionStep("Función: f(x) = " + function));
+    /**
+     * Deriva respecto de la variable indicada, sin evaluar en un punto.
+     *
+     * @param variableName variable respecto de la que se deriva: x o y
+     */
+    public CalculationResult derive(
+            Expression function, int order, String variableName) {
+        return derive(function, order, OptionalDouble.empty(), variableName);
+    }
 
-        // Con varias derivadas, cada una es un paso principal y sus reglas van un nivel adentro
+    /**
+     * Método interno para realizar la derivación.
+     */
+    private CalculationResult derive(
+            Expression function,
+            int order,
+            OptionalDouble point,
+            String variableName) {
+
+        if (order < 1 || order > MAX_DERIVATIVE_ORDER) {
+            throw new IllegalArgumentException(
+                    "Orden de derivada fuera de rango: " + order);
+        }
+
+        if (!"x".equals(variableName) && !"y".equals(variableName)) {
+            throw new IllegalArgumentException(
+                    "La variable de derivación debe ser x o y.");
+        }
+
+        boolean hasX = function.contains(new Variable("x"));
+        boolean hasY = function.contains(new Variable("y"));
+        boolean partial = variableName.equals("y") || hasY;
+
+        if (point.isPresent() && partial) {
+            throw new IllegalArgumentException(
+                    "La evaluación puntual de una derivada parcial requiere "
+                            + "valores para x e y.");
+        }
+
+        String functionName = hasX && hasY
+                ? "f(x,y)"
+                : hasY ? "f(y)" : "f(x)";
+
+        List<SolutionStep> steps = new ArrayList<>();
+        steps.add(new SolutionStep(
+                "Función: " + functionName + " = " + function));
+
         int ruleLevel = order > 1 ? 1 : 0;
         Expression current = function;
+
+        DerivativeCalculator calculator =
+                variableName.equals("x")
+                        ? derivativeCalculator
+                        : new DerivativeCalculator(variableName);
+
         for (int k = 1; k <= order; k++) {
             if (order > 1) {
-                steps.add(new SolutionStep(ORDINALS[k] + " derivada: se deriva "
-                        + derivativeName(k - 1) + " = " + current));
+                steps.add(new SolutionStep(
+                        ORDINALS[k] + " derivada: se deriva "
+                                + derivativeName(
+                                k - 1, variableName,
+                                partial, functionName)
+                                + " = " + current));
             }
-            Expression derivative = derivativeCalculator.derive(current, steps, ruleLevel);
-            current = simplify(derivative, derivativeName(k), steps, ruleLevel);
+
+            Expression derivative =
+                    calculator.derive(current, steps, ruleLevel);
+
+            current = simplify(
+                    derivative,
+                    derivativeName(
+                            k, variableName, partial, functionName),
+                    steps,
+                    ruleLevel);
         }
 
-        String name = derivativeName(order);
+        String name = derivativeName(
+                order, variableName, partial, functionName);
+
+        String summary = name + " = " + current;
+
+        /*
+         * Las expresiones multivariables todavía no se representan
+         * en la gráfica bidimensional existente.
+         */
+        if (point.isEmpty() && partial) {
+            return new CalculationResult(summary, steps);
+        }
+
         List<GraphCurve> curves = new ArrayList<>(List.of(
-                new GraphCurve("f(x) = " + function, function, CurveStyle.FUNCTION),
-                new GraphCurve(name + " = " + current, current, CurveStyle.DERIVATIVE)));
+                new GraphCurve(
+                        functionName + " = " + function,
+                        function,
+                        CurveStyle.FUNCTION),
+                new GraphCurve(
+                        name + " = " + current,
+                        current,
+                        CurveStyle.DERIVATIVE)));
+
         if (point.isEmpty()) {
-            return new CalculationResult(name + " = " + current, steps, new Graph(curves, List.of(), DEFAULT_X_RANGE));
+            return new CalculationResult(
+                    summary,
+                    steps,
+                    new Graph(curves, List.of(), DEFAULT_X_RANGE));
         }
 
         double x = point.getAsDouble();
         double value = current.evaluate(x);
         String at = FormatUtils.formatNumber(x);
         String image = name.replace("(x)", "(" + at + ")");
+
         Range xRange = Range.centeredAt(x, POINT_X_WIDTH);
+
         if (!Double.isFinite(value)) {
-            steps.add(new SolutionStep(image + " no está definida: x = " + at
-                    + " está fuera del dominio de la derivada"));
-            return new CalculationResult(image + " no está definida", steps, new Graph(curves, List.of(), xRange));
+            steps.add(new SolutionStep(
+                    image + " no está definida: x = " + at
+                            + " está fuera del dominio de la derivada"));
+
+            return new CalculationResult(
+                    image + " no está definida",
+                    steps,
+                    new Graph(curves, List.of(), xRange));
         }
+
         String result = image + " = " + FormatUtils.formatNumber(value);
-        steps.add(new SolutionStep("Evaluar en x = " + at + ": " + result));
+
+        steps.add(new SolutionStep(
+                "Evaluar en x = " + at + ": " + result));
 
         List<GraphPoint> points = new ArrayList<>();
         points.add(new GraphPoint(pointLabel(x, value), x, value));
+
         double fx = function.evaluate(x);
+
         if (order == 1 && Double.isFinite(fx)) {
             Expression tangent = tangentLine(x, fx, value, steps);
-            curves.add(new GraphCurve("Tangente: y = " + tangent, tangent, CurveStyle.TANGENT));
+            curves.add(new GraphCurve(
+                    "Tangente: y = " + tangent,
+                    tangent,
+                    CurveStyle.TANGENT));
             points.add(new GraphPoint(pointLabel(x, fx), x, fx));
         }
-        return new CalculationResult(result, steps, new Graph(curves, points, xRange));
+
+        return new CalculationResult(
+                result, steps, new Graph(curves, points, xRange));
     }
 
-    /**
-     * Recta tangente a f en x = a, escrita como {@code y = m*x + b} con
-     * {@code m = f'(a)} y {@code b = f(a) - m*a}. Agrega el paso que la
-     * explica. Los valores se redondean como se muestran
-     * ({@value FormatUtils#SIGNIFICANT_DIGITS} cifras) para que la ecuación
-     * sea legible.
-     */
-    private static Expression tangentLine(double a, double fa, double slope, List<SolutionStep> steps) {
-        Variable x = new Variable("x");
-        Constant m = rounded(slope);
-        Expression xMinusA = Simplifier.difference(x, rounded(a));
-        Expression substituted = Simplifier.sum(rounded(fa), Simplifier.product(m, xMinusA));
-        Expression line = Simplifier.sum(Simplifier.product(m, x), rounded(fa - m.getValue() * a));
-        String at = FormatUtils.formatNumber(a);
-        String factor = xMinusA instanceof Variable ? xMinusA.toString() : "(" + xMinusA + ")";
-        steps.add(new SolutionStep("Recta tangente en x = " + at + ": y = f(" + at + ") + f'(" + at + ")*"
-                + factor + " = " + substituted + (line.equals(substituted) ? "" : " = " + line)));
-        return line;
-    }
-
-    /** Etiqueta breve de un punto en la gráfica: {@code (1.047, 0.866)}. */
-    private static String pointLabel(double x, double y) {
-        return "(" + FormatUtils.formatShort(x) + ", " + FormatUtils.formatShort(y) + ")";
-    }
-
-    private static Constant rounded(double value) {
-        return new Constant(Double.parseDouble(FormatUtils.formatNumber(value)));
-    }
-
-    /**
-     * Simplifica un resultado. Si cambia, lo explica en dos pasos: lo que se
-     * obtuvo al aplicar las reglas y la versión simplificada, indicando qué se
-     * hizo («agrupar términos semejantes y cancelar factores comunes»).
-     */
-    private static Expression simplify(Expression result, String name, List<SolutionStep> steps, int level) {
-        Set<SimplificationRule> applied = EnumSet.noneOf(SimplificationRule.class);
-        Expression simplified = Simplifier.simplify(result, applied);
-        if (simplified.equals(result)) {
-            steps.add(new SolutionStep("Resultado: " + name + " = " + result, level));
-            return result;
-        }
-        String how = applied.isEmpty() ? "" : " (" + joinInSpanish(applied) + ")";
-        steps.add(new SolutionStep("Se obtiene: " + name + " = " + result, level));
-        steps.add(new SolutionStep("Simplificar" + how + ": " + name + " = " + simplified, level));
-        return simplified;
-    }
-
-    /** «a», «a y b», «a, b y c». */
-    private static String joinInSpanish(Set<SimplificationRule> rules) {
-        List<String> parts = rules.stream().map(SimplificationRule::getDescription).toList();
-        if (parts.size() == 1) {
-            return parts.getFirst();
-        }
-        return String.join(", ", parts.subList(0, parts.size() - 1)) + " y " + parts.getLast();
-    }
-
-    /**
-     * Integral indefinida {@code ∫f(x) dx = F(x) + C}, con procedimiento y
-     * comprobación por derivación.
-     */
     public CalculationResult integrate(Expression function) {
         return indefiniteIntegral.solve(function);
+    }
+    /**
+     * Integral indefinida respecto de la variable seleccionada.
+     */
+    public CalculationResult integrate(
+            Expression function, String variableName) {
+
+        return indefiniteIntegral.solve(function, variableName);
     }
 
     /**
@@ -292,6 +334,18 @@ public class CalculatorModel {
      */
     public CalculationResult exactIntegral(Expression function, Expression a, Expression b) {
         return definiteIntegral.exact(function, a, b);
+    }
+    /**
+     * Integral definida exacta respecto de la variable indicada.
+     */
+    public CalculationResult exactIntegral(
+            Expression function,
+            Expression a,
+            Expression b,
+            String variableName) {
+
+        return definiteIntegral.exact(
+                function, a, b, variableName);
     }
 
     /**
@@ -321,7 +375,13 @@ public class CalculatorModel {
      * @throws ParameterException si las curvas no encierran una región
      */
     public CalculationResult enclosedArea(Expression f, Expression g) throws ParameterException {
-        return areaBetweenCurves.enclosed(f, g);
+        return enclosedArea(f, g, "x");
+    }
+
+    /** Área encerrada de f y g respecto de x o y. */
+    public CalculationResult enclosedArea(Expression f, Expression g, String variableName)
+            throws ParameterException {
+        return areaBetweenCurves.enclosed(f, g, variableName);
     }
 
     /**
@@ -333,7 +393,13 @@ public class CalculatorModel {
      */
     public CalculationResult areaBetween(Expression f, Expression g, Expression a, Expression b)
             throws ParameterException {
-        return areaBetweenCurves.between(f, g, a, b);
+        return areaBetween(f, g, a, b, "x");
+    }
+
+    /** Área entre f y g en [a, b], respecto de x o y. */
+    public CalculationResult areaBetween(Expression f, Expression g, Expression a, Expression b,
+                                         String variableName) throws ParameterException {
+        return areaBetweenCurves.between(f, g, a, b, variableName);
     }
 
     /**
@@ -362,8 +428,139 @@ public class CalculatorModel {
         return AreaBetweenCurves.xAxis();
     }
 
+    /**
+     * Recta tangente a f en x = a.
+     */
+    private static Expression tangentLine(
+            double a,
+            double fa,
+            double slope,
+            List<SolutionStep> steps) {
+
+        Variable x = new Variable("x");
+        Constant m = rounded(slope);
+
+        Expression xMinusA = Simplifier.difference(x, rounded(a));
+
+        Expression substituted = Simplifier.sum(
+                rounded(fa),
+                Simplifier.product(m, xMinusA));
+
+        Expression line = Simplifier.sum(
+                Simplifier.product(m, x),
+                rounded(fa - m.getValue() * a));
+
+        String at = FormatUtils.formatNumber(a);
+
+        String factor = xMinusA instanceof Variable
+                ? xMinusA.toString()
+                : "(" + xMinusA + ")";
+
+        steps.add(new SolutionStep(
+                "Recta tangente en x = " + at
+                        + ": y = f(" + at + ") + f'(" + at + ")*"
+                        + factor + " = " + substituted
+                        + (line.equals(substituted) ? "" : " = " + line)));
+
+        return line;
+    }
+
+    /**
+     * Etiqueta breve de un punto en la gráfica.
+     */
+    private static String pointLabel(double x, double y) {
+        return "("
+                + FormatUtils.formatShort(x)
+                + ", "
+                + FormatUtils.formatShort(y)
+                + ")";
+    }
+
+    private static Constant rounded(double value) {
+        return new Constant(
+                Double.parseDouble(FormatUtils.formatNumber(value)));
+    }
+
+    /**
+     * Simplifica un resultado y registra los pasos correspondientes.
+     */
+    private static Expression simplify(
+            Expression result,
+            String name,
+            List<SolutionStep> steps,
+            int level) {
+
+        Set<SimplificationRule> applied =
+                EnumSet.noneOf(SimplificationRule.class);
+
+        Expression simplified = Simplifier.simplify(result, applied);
+
+        if (simplified.equals(result)) {
+            steps.add(new SolutionStep(
+                    "Resultado: " + name + " = " + result,
+                    level));
+
+            return result;
+        }
+
+        String how = applied.isEmpty()
+                ? ""
+                : " (" + joinInSpanish(applied) + ")";
+
+        steps.add(new SolutionStep(
+                "Se obtiene: " + name + " = " + result,
+                level));
+
+        steps.add(new SolutionStep(
+                "Simplificar" + how + ": " + name + " = " + simplified,
+                level));
+
+        return simplified;
+    }
+
+    /**
+     * Une las descripciones de las reglas de simplificación en español.
+     */
+    private static String joinInSpanish(
+            Set<SimplificationRule> rules) {
+
+        List<String> parts = rules.stream()
+                .map(SimplificationRule::getDescription)
+                .toList();
+
+        if (parts.size() == 1) {
+            return parts.getFirst();
+        }
+
+        return String.join(
+                ", ",
+                parts.subList(0, parts.size() - 1))
+                + " y "
+                + parts.getLast();
+    }
+
     /** {@code f(x)}, {@code f'(x)}, {@code f''(x)}… */
-    private static String derivativeName(int order) {
-        return "f" + "'".repeat(order) + "(x)";
+    private static String derivativeName(
+            int order,
+            String variableName,
+            boolean partial,
+            String functionName) {
+
+        if (order == 0) {
+            return functionName;
+        }
+
+        if (!partial) {
+            return "f" + "'".repeat(order) + "(" + variableName + ")";
+        }
+
+        if (order == 1) {
+            return "∂f/∂" + variableName;
+        }
+
+        String superscript = order == 2 ? "²" : "³";
+
+        return "∂" + superscript + "f/∂"
+                + variableName + superscript;
     }
 }

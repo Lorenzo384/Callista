@@ -122,6 +122,24 @@ class DerivativeCalculatorTest {
     }
 
     @Test
+    void computesPartialDerivativeWithRespectToX() throws InvalidExpressionException {
+        Expression function = parser.parse("x^3 + 3y");
+        Expression derivative = new DerivativeCalculator("x").derive(function);
+
+        assertEquals("3*x^2", derivative.toString());
+        assertEquals(12.0, derivative.evaluate(2.0, 4.0), 1e-9);
+    }
+
+    @Test
+    void computesPartialDerivativeWithRespectToY() throws InvalidExpressionException {
+        Expression function = parser.parse("x^3 + 3y");
+        Expression derivative = new DerivativeCalculator("y").derive(function);
+
+        assertEquals("3", derivative.toString());
+        assertEquals(3.0, derivative.evaluate(2.0, 4.0), 1e-9);
+    }
+
+    @Test
     void usesTheVariableNameInTheNotation() throws InvalidExpressionException {
         List<SolutionStep> steps = new ArrayList<>();
         new DerivativeCalculator("t").derive(new ExpressionParser("t").parse("t^2"), steps, 0);

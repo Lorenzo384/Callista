@@ -40,6 +40,20 @@ class ExpressionTest {
     }
 
     @Test
+    void evaluatesExpressionWithIndependentXAndY() {
+        Expression expression = new Sum(
+                new Power(new Variable("x"), c(3)),
+                new Product(c(3), new Variable("y"))
+        );
+
+        assertEquals(20, expression.evaluate(2, 4), DELTA);
+
+        assertTrue(expression.dependsOn("x"));
+        assertTrue(expression.dependsOn("y"));
+        assertFalse(expression.dependsOn("z"));
+    }
+
+    @Test
     void evaluatesConstants() {
         assertEquals(Math.PI, Constant.PI.evaluate(0), DELTA);
         assertEquals(Math.E, Constant.E.evaluate(0), DELTA);

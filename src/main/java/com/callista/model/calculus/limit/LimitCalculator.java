@@ -53,14 +53,50 @@ public class LimitCalculator {
      * {@code target}, agregando a {@code steps} las reglas que se usaron o la
      * tabla de valores.
      */
-    public Limit limit(Expression f, Variable variable, LimitPoint target, List<SolutionStep> steps, int level) {
+    public Limit limit(
+            Expression f,
+            Variable variable,
+            LimitPoint target,
+            List<SolutionStep> steps,
+            int level) {
+
+        boolean parameterized = hasOtherVariable(f, variable);
+
         Evaluation evaluation = new Evaluation(variable, target);
         Optional<Limit> symbolic = evaluation.eval(f);
-        if (symbolic.isPresent() && agreesNumerically(f, symbolic.get(), target)) {
-            evaluation.notes.forEach(note -> steps.add(new SolutionStep(note, level)));
+
+        if (symbolic.isPresent()
+                && (parameterized
+                || agreesNumerically(f, symbolic.get(), target))) {
+
+            evaluation.notes.forEach(
+                    note -> steps.add(new SolutionStep(note, level)));
+
             return symbolic.get();
         }
+
+        if (parameterized) {
+            steps.add(new SolutionStep(
+                    "No se pudo determinar el límite con las reglas "
+                            + "simbólicas. No se utiliza una tabla numérica "
+                            + "porque podría confundir la variable libre "
+                            + "con la variable del límite.",
+                    level));
+
+            return Limit.NONE;
+        }
+
         return numericLimit(f, variable, target, steps, level);
+    }
+
+    private static boolean hasOtherVariable(
+            Expression expression,
+            Variable activeVariable) {
+
+        String active = activeVariable.toString();
+
+        return (!"x".equals(active) && expression.dependsOn("x"))
+                || (!"y".equals(active) && expression.dependsOn("y"));
     }
 
     /**
@@ -164,8 +200,9 @@ public class LimitCalculator {
 
         /** El límite de e, o vacío si las reglas no lo deciden. */
         Optional<Limit> eval(Expression e) {
-            if (!e.dependsOnVariable()) {
+            if (!e.dependsOn(variable.toString())) {
                 return Optional.of(Limit.finite(e));
+
             }
             if (!target.isInfinite()) {
                 Optional<Limit> substituted = substitute(e);
@@ -193,6 +230,9 @@ public class LimitCalculator {
          * (vale casi lo mismo muy cerca), el límite es e(c).
          */
         private Optional<Limit> substitute(Expression e) {
+            if (hasOtherVariable(e, variable)) {
+                return Optional.empty();
+            }
             double c = target.point().evaluate(0);
             double at = e.evaluate(c);
             double near = e.evaluate(target.near(9));
@@ -260,10 +300,18 @@ public class LimitCalculator {
             }
             if (a.isInfinite() || b.isInfinite()) {
                 Limit finite = a.isInfinite() ? b : a;
+
                 if (!finite.isFinite()) {
-                    return Optional.empty(); // ∞ por algo que oscila
+                    return Optional.empty();
                 }
-                return Optional.of(Limit.infinity(sign(a.isInfinite() ? a : b) * sign(finite)));
+
+                if (finite.value().dependsOnVariable()) {
+                    return Optional.empty();
+                }
+
+                return Optional.of(
+                        Limit.infinity(
+                                sign(a.isInfinite() ? a : b) * sign(finite)));
             }
             // Uno no tiene límite: por un número distinto de 0 sigue sin tenerlo
             Limit other = a.kind() == Limit.Kind.NONE ? b : a;
@@ -291,6 +339,9 @@ public class LimitCalculator {
             if (b.isZero()) {
                 if (a.isZero()) {
                     return lhopital(numerator, denominator, "0/0");
+                }
+                if (a.isFinite() && a.value().dependsOnVariable()) {
+                    return Optional.empty();
                 }
                 if (a.kind() == Limit.Kind.NONE) {
                     return Optional.empty();

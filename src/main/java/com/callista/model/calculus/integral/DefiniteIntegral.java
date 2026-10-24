@@ -40,15 +40,25 @@ import java.util.OptionalDouble;
  */
 public class DefiniteIntegral {
 
-    /** Subintervalos del valor de referencia con que se estima el error. */
+    /**
+     * Subintervalos del valor de referencia con que se estima el error.
+     */
     public static final int REFERENCE_SUBINTERVALS = 10_000;
-    /** Si hay más puntos que estos, la tabla del procedimiento se resume. */
+    /**
+     * Si hay más puntos que estos, la tabla del procedimiento se resume.
+     */
     private static final int MAX_LISTED_NODES = 12;
-    /** Con más subintervalos que estos, las figuras no se dibujan (serían demasiado finas). */
+    /**
+     * Con más subintervalos que estos, las figuras no se dibujan (serían demasiado finas).
+     */
     private static final int MAX_DRAWN_SHAPES = 60;
-    /** Puntos donde se revisa que f sea continua antes de aplicar el Teorema Fundamental. */
+    /**
+     * Puntos donde se revisa que f sea continua antes de aplicar el Teorema Fundamental.
+     */
     private static final int CONTINUITY_SAMPLES = 2001;
-    /** Subintervalos de Simpson cuando no hay antiderivada elemental. */
+    /**
+     * Subintervalos de Simpson cuando no hay antiderivada elemental.
+     */
     private static final int FALLBACK_SUBINTERVALS = 1000;
 
     private final IndefiniteIntegral indefinite = new IndefiniteIntegral();
@@ -63,51 +73,238 @@ public class DefiniteIntegral {
      * límite es infinito o f tiene una asíntota en el intervalo, se resuelve
      * como integral impropia ({@link ImproperIntegral}).</p>
      */
-    public CalculationResult exact(Expression f, Expression a, Expression b) {
+
+    /**
+     * Integral definida exacta respecto de x, conservando compatibilidad
+     * con las llamadas existentes.
+     */
+    public CalculationResult exact(
+            Expression f, Expression a, Expression b) {
+        return exact(f, a, b, "x");
+    }
+
+    /**
+     * Integral definida respecto de x o y.
+     * <p>
+     * Si el resultado depende de la otra variable, conserva esa variable
+     * de forma simbólica y no inventa una aproximación numérica.
+     */
+    public CalculationResult exact(
+            Expression f,
+            Expression a,
+            Expression b,
+            String variableName) {
+
+        if (!"x".equals(variableName) && !"y".equals(variableName)) {
+            throw new IllegalArgumentException(
+                    "La variable de integración debe ser x o y.");
+        }
+
         double av = a.evaluate(0);
         double bv = b.evaluate(0);
-        if (ImproperIntegral.isImproper(f, av, bv)) {
-            return improper.solve(f, a, b);
-        }
-        String integral = "∫[" + a + ", " + b + "] f(x) dx";
+
+        String otherVariable = "x".equals(variableName) ? "y" : "x";
+        boolean hasOtherVariable = f.dependsOn(otherVariable);
+
+        boolean hasX = f.dependsOn("x");
+        boolean hasY = f.dependsOn("y");
+
+        String functionName = hasX && hasY
+                ? "f(x,y)"
+                : hasX ? "f(x)" : hasY ? "f(y)" : "f(" + variableName + ")";
+
+        String integral = "∫[" + a + ", " + b + "] "
+                + functionName + " d" + variableName;
+
         List<SolutionStep> steps = new ArrayList<>();
-        steps.add(new SolutionStep("Función: f(x) = " + f));
+        steps.add(new SolutionStep("Función: " + functionName + " = " + f));
 
-        OptionalDouble gap = firstDiscontinuity(f, Math.min(av, bv), Math.max(av, bv));
-        if (gap.isPresent()) {
-            steps.add(new SolutionStep("f(x) no está definida en x ≈ " + fmt(gap.getAsDouble()) + ", dentro de ["
-                    + a + ", " + b + "]: el intervalo sale del dominio de f y el Teorema Fundamental no se aplica."));
-            return new CalculationResult(integral + ": fuera del dominio", steps,
-                    new Graph(List.of(curve(f)), List.of(), xRange(av, bv)));
+        boolean infiniteBounds = !Double.isFinite(av) || !Double.isFinite(bv);
+
+        boolean detectedImproper = !infiniteBounds
+                && !hasOtherVariable
+                && ImproperIntegral.isImproper(
+                f, Math.min(av, bv), Math.max(av, bv));
+
+        /*
+         * La clasificación actual de integrales impropias fue diseñada
+         * para una función univariada respecto de x.
+         * No se usa ese cálculo cuando queda otra variable como parámetro.
+         */
+        if (infiniteBounds || detectedImproper) {
+            if (infiniteBounds || !hasOtherVariable) {
+                return improper.solve(f, a, b, variableName);
+            }
+
+            steps.add(new SolutionStep(
+                    "Esta integral requiere adaptar el cálculo de integrales "
+                            + "impropias para la variable seleccionada y, "
+                            + "cuando corresponda, para la otra variable."));
+
+            return new CalculationResult(
+                    integral + ": requiere tratamiento de integral impropia",
+                    steps);
         }
 
-        steps.add(new SolutionStep("Buscar una antiderivada F(x) de f(x):"));
+        /*
+         * No se analiza f(x,y) asignando accidentalmente el mismo valor
+         * a las dos variables. La detección univariada se conserva.
+         */
+        OptionalDouble gap = hasOtherVariable
+                ? OptionalDouble.empty()
+                : firstDiscontinuity(
+                f, Math.min(av, bv), Math.max(av, bv));
+
+        boolean graphable =
+                "x".equals(variableName) && !hasOtherVariable;
+
+        if (gap.isPresent()) {
+            steps.add(new SolutionStep(
+                    functionName + " no está definida en "
+                            + variableName + " ≈ "
+                            + fmt(gap.getAsDouble())
+                            + ", dentro del intervalo ["
+                            + a + ", " + b
+                            + "]; no se aplica el Teorema Fundamental."));
+
+            if (graphable) {
+                return new CalculationResult(
+                        integral + ": fuera del dominio",
+                        steps,
+                        new Graph(
+                                List.of(curve(f)),
+                                List.of(),
+                                xRange(av, bv)));
+            }
+
+            return new CalculationResult(
+                    integral + ": fuera del dominio",
+                    steps);
+        }
+
+        steps.add(new SolutionStep(
+                "Buscar una antiderivada respecto de "
+                        + variableName + ":"));
+
         Expression antiderivative;
+
         try {
-            antiderivative = indefinite.antiderivative(f, steps, 1);
+            antiderivative = indefinite.antiderivative(
+                    f, steps, 1, variableName);
+
         } catch (UnsupportedIntegralException e) {
+            steps.add(new SolutionStep(e.getMessage()));
+
+            /*
+             * La aproximación numérica existente no conserva parámetros
+             * multivariables y está construida para la variable x.
+             */
+            if (hasOtherVariable || !"x".equals(variableName)) {
+                steps.add(new SolutionStep(
+                        "No se aplicó una aproximación numérica automática "
+                                + "para evitar evaluar incorrectamente "
+                                + "la variable restante."));
+
+                return new CalculationResult(
+                        integral + ": no se encontró antiderivada",
+                        steps);
+            }
+
             return numericFallback(f, av, bv, steps, e);
         }
 
-        Variable x = new Variable("x");
-        Expression atB = Simplifier.simplify(antiderivative.replace(x, b));
-        Expression atA = Simplifier.simplify(antiderivative.replace(x, a));
-        Expression exact = Simplifier.simplify(new Difference(atB, atA));
-        double value = exact.evaluate(0);
+        Variable integrationVariable = new Variable(variableName);
 
-        steps.add(new SolutionStep("Antiderivada: F(x) = " + antiderivative));
-        steps.add(new SolutionStep("Teorema Fundamental del Cálculo: ∫[a, b] f(x) dx = F(b) - F(a)"));
-        steps.add(new SolutionStep("F(" + b + ") = " + withApproximation(atB), 1));
-        steps.add(new SolutionStep("F(" + a + ") = " + withApproximation(atA), 1));
-        steps.add(new SolutionStep("Resultado: F(" + b + ") - F(" + a + ") = " + withApproximation(exact)));
+        Expression atB = Simplifier.simplify(
+                antiderivative.replace(integrationVariable, b));
 
-        double reference = reference(f, av, bv);
-        if (Double.isFinite(reference)) {
-            boolean agrees = Math.abs(reference - value) <= 1e-6 * Math.max(1, Math.abs(value));
-            steps.add(new SolutionStep("Comprobación numérica (Simpson con n = " + REFERENCE_SUBINTERVALS + "): ≈ "
-                    + fmt(reference) + (agrees ? " ✓" : " ✗ (no coincide)")));
+        Expression atA = Simplifier.simplify(
+                antiderivative.replace(integrationVariable, a));
+
+        Expression exact = Simplifier.simplify(
+                new Difference(atB, atA));
+
+        boolean parameterized = exact.dependsOnVariable();
+
+        boolean antiderivativeHasBothVariables =
+                antiderivative.dependsOn("x")
+                        && antiderivative.dependsOn("y");
+
+        String antiderivativeName = antiderivativeHasBothVariables
+                ? "F(x,y)"
+                : "F(" + variableName + ")";
+
+        String atBName = atB.dependsOnVariable()
+                ? "F(" + b + ", " + otherVariable + ")"
+                : "F(" + b + ")";
+
+        String atAName = atA.dependsOnVariable()
+                ? "F(" + a + ", " + otherVariable + ")"
+                : "F(" + a + ")";
+
+        steps.add(new SolutionStep(
+                "Antiderivada: " + antiderivativeName
+                        + " = " + antiderivative));
+
+        if ("x".equals(variableName) && !hasOtherVariable) {
+            steps.add(new SolutionStep(
+                    "Teorema Fundamental del Cálculo: "
+                            + "∫[a, b] f(x) dx = F(b) - F(a)"));
+        } else {
+            steps.add(new SolutionStep(
+                    "Teorema Fundamental del Cálculo: "
+                            + integral + " = " + atBName + " - " + atAName));
         }
-        return new CalculationResult(integral + " = " + withApproximation(exact), steps, graph(f, av, bv, List.of()));
+
+        steps.add(new SolutionStep(
+                atBName + " = " + withApproximation(atB), 1));
+
+        steps.add(new SolutionStep(
+                atAName + " = " + withApproximation(atA), 1));
+
+        steps.add(new SolutionStep(
+                "Resultado: " + atBName + " - " + atAName
+                        + " = " + withApproximation(exact)));
+
+        /*
+         * Solo se compara con una aproximación escalar cuando no queda
+         * ninguna variable libre y no había un parámetro adicional.
+         */
+        if (!parameterized && !hasOtherVariable) {
+            double value = exact.evaluate(0);
+            double reference = reference(f, av, bv);
+
+            if (Double.isFinite(reference)) {
+                boolean agrees = Math.abs(reference - value)
+                        <= 1e-6 * Math.max(1, Math.abs(value));
+
+                steps.add(new SolutionStep(
+                        "Comprobación numérica (Simpson con n = "
+                                + REFERENCE_SUBINTERVALS + "): ≈ "
+                                + fmt(reference)
+                                + (agrees ? " ✓" : " ✗ (no coincide)")));
+            }
+        } else {
+            steps.add(new SolutionStep(
+                    "El resultado conserva la variable restante "
+                            + otherVariable
+                            + "; no se sustituye por un valor numérico."));
+        }
+
+        String summary = integral + " = " + withApproximation(exact);
+
+        /*
+         * La gráfica actual es bidimensional y no representa una función
+         * que conserve una segunda variable independiente.
+         */
+        if (!graphable) {
+            return new CalculationResult(summary, steps);
+        }
+
+        return new CalculationResult(
+                summary,
+                steps,
+                graph(f, av, bv, List.of()));
     }
 
     /**
@@ -133,21 +330,43 @@ public class DefiniteIntegral {
      * Primer punto del intervalo donde f no está definida o es enorme (una
      * asíntota), revisando muchos puntos; vacío si parece continua.
      */
-    private static OptionalDouble firstDiscontinuity(Expression f, double from, double to) {
+
+    /**
+     * Busca puntos muestreados donde la función no produce
+     * un valor finito.
+     * <p>
+     * Nota: el muestreo no garantiza detectar todas las
+     * discontinuidades.
+     */
+    private static OptionalDouble firstDiscontinuity(
+            Expression f, double from, double to) {
+
         for (int i = 0; i < CONTINUITY_SAMPLES; i++) {
-            double x = from + (to - from) * i / (CONTINUITY_SAMPLES - 1);
+            double x = from + (to - from) * i
+                    / (CONTINUITY_SAMPLES - 1);
+
             double y = f.evaluate(x);
-            if (!Double.isFinite(y) || Math.abs(y) > 1e12) {
+
+            if (!Double.isFinite(y)) {
                 return OptionalDouble.of(x);
             }
         }
+
         return OptionalDouble.empty();
     }
 
+
     /** {@code 1/3 ≈ 0.3333333333}, o solo el número si ya es un número. */
     private static String withApproximation(Expression e) {
+        if (e.dependsOnVariable()) {
+            return e.toString();
+        }
+
         boolean plainNumber = e instanceof Constant c && c.isNumber();
-        return plainNumber ? e.toString() : e + " ≈ " + fmt(e.evaluate(0));
+
+        return plainNumber
+                ? e.toString()
+                : e + " ≈ " + fmt(e.evaluate(0));
     }
 
     /**
