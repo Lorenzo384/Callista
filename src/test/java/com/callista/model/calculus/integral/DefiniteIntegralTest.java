@@ -1,5 +1,5 @@
 package com.callista.model.calculus.integral;
-
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import com.callista.model.calculus.numeric.NumericalMethod;
 import com.callista.model.entity.CalculationResult;
 import com.callista.model.entity.Graph;
@@ -143,4 +143,17 @@ class DefiniteIntegralTest {
         assertEquals("∫[0, 1] f(x) dx ≈ 0.7468241328", result.getSummary());
         assertTrue(steps(result).stream().anyMatch(s -> s.startsWith("Como no se encontró antiderivada")));
     }
+
+
+    @Test
+    void acceptsLargeValuesWhenTheyAreFinite() throws InvalidExpressionException {
+        CalculationResult result = exact("10000000000000", "0", "1");
+
+        assertFalse(
+                result.getSummary().contains("fuera del dominio"),
+                "Una función constante con valores grandes no debe "
+                        + "rechazarse por superar un umbral arbitrario."
+        );
+    }
+
 }

@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="Gradle: com.formdev:flatlaf:3.7.2" type="java-imported" external-system-id="GRADLE">
+    <properties groupId="com.formdev" artifactId="flatlaf" version="3.7.2" baseVersion="3.7.2" />
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.formdev/flatlaf/3.7.2/fcf9f3f276b11c7f5fc525838073ddcd80abda6a/flatlaf-3.7.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.formdev/flatlaf/3.7.2/3f844b0397bb968ff9688709a1c8137b88b548cb/flatlaf-3.7.2-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

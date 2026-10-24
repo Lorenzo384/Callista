@@ -133,16 +133,31 @@ public class DefiniteIntegral {
      * Primer punto del intervalo donde f no está definida o es enorme (una
      * asíntota), revisando muchos puntos; vacío si parece continua.
      */
-    private static OptionalDouble firstDiscontinuity(Expression f, double from, double to) {
+
+    /**
+     * Busca puntos muestreados donde la función no produce
+     * un valor finito.
+     *
+     * Nota: el muestreo no garantiza detectar todas las
+     * discontinuidades.
+     */
+    private static OptionalDouble firstDiscontinuity(
+            Expression f, double from, double to) {
+
         for (int i = 0; i < CONTINUITY_SAMPLES; i++) {
-            double x = from + (to - from) * i / (CONTINUITY_SAMPLES - 1);
+            double x = from + (to - from) * i
+                    / (CONTINUITY_SAMPLES - 1);
+
             double y = f.evaluate(x);
-            if (!Double.isFinite(y) || Math.abs(y) > 1e12) {
+
+            if (!Double.isFinite(y)) {
                 return OptionalDouble.of(x);
             }
         }
+
         return OptionalDouble.empty();
     }
+
 
     /** {@code 1/3 ≈ 0.3333333333}, o solo el número si ya es un número. */
     private static String withApproximation(Expression e) {
