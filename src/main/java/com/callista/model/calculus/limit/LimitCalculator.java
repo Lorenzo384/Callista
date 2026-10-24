@@ -17,6 +17,7 @@ import com.callista.model.expression.Sum;
 import com.callista.model.expression.Variable;
 import com.callista.util.FormatUtils;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
@@ -67,7 +68,8 @@ public class LimitCalculator {
 
         if (symbolic.isPresent()
                 && (parameterized
-                || agreesNumerically(f, symbolic.get(), target))) {
+                ? agreesForParameters(f, variable, symbolic.get(), target)
+                : agreesNumerically(f, symbolic.get(), target))) {
 
             evaluation.notes.forEach(
                     note -> steps.add(new SolutionStep(note, level)));
@@ -97,6 +99,40 @@ public class LimitCalculator {
 
         return (!"x".equals(active) && expression.dependsOn("x"))
                 || (!"y".equals(active) && expression.dependsOn("y"));
+    }
+
+    /** Valores de prueba del parámetro: sin 0 ni enteros, para no caer en casos especiales. */
+    private static final double[] PARAMETER_VALUES = {1.1, -0.6, 0.4, -1.3, 2.9, -2.7};
+
+    /**
+     * Red de seguridad con un parámetro (y en un límite respecto de x): las
+     * reglas deciden algunos pasos con el valor numérico de y, así que el
+     * resultado se compara con la función para varios valores de y. Debe
+     * valer con todos.
+     */
+    private static boolean agreesForParameters(Expression f, Variable variable, Limit limit, LimitPoint target) {
+        List<Variable> parameters = new ArrayList<>();
+        for (String name : List.of("x", "y")) {
+            if (!name.equals(variable.toString()) && f.dependsOn(name)) {
+                parameters.add(new Variable(name));
+            }
+        }
+        for (double value : PARAMETER_VALUES) {
+            Expression fixed = f;
+            Limit fixedLimit = limit;
+            for (Variable parameter : parameters) {
+                Constant constant = new Constant(value);
+                fixed = fixed.replace(parameter, constant);
+                if (fixedLimit.isFinite()) {
+                    fixedLimit = new Limit(Limit.Kind.FINITE, fixedLimit.value().replace(parameter, constant),
+                            fixedLimit.exact());
+                }
+            }
+            if (!agreesNumerically(fixed, fixedLimit, target)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

@@ -119,14 +119,16 @@ public class DefiniteIntegral {
         List<SolutionStep> steps = new ArrayList<>();
         steps.add(new SolutionStep("Función: " + functionName + " = " + f));
 
-        // Con un parámetro, las asíntotas y el dominio se revisan con el parámetro = 1
-        Expression inspected = hasOtherVariable
-                ? f.replace(new Variable(otherVariable), new Constant(1))
-                : f;
-        if (ImproperIntegral.isImproper(inspected, av, bv)) {
+        // Con un parámetro, se revisa f con varios valores de él
+        boolean improperIntegral = hasOtherVariable
+                ? ImproperIntegral.isImproper(f, new Variable(otherVariable), av, bv)
+                : ImproperIntegral.isImproper(f, av, bv);
+        if (improperIntegral) {
             return improper.solve(f, a, b, variableName);
         }
-        OptionalDouble gap = firstDiscontinuity(inspected, Math.min(av, bv), Math.max(av, bv));
+        OptionalDouble gap = hasOtherVariable
+                ? OptionalDouble.empty()
+                : firstDiscontinuity(f, Math.min(av, bv), Math.max(av, bv));
 
         boolean graphable =
                 "x".equals(variableName) && !hasOtherVariable;

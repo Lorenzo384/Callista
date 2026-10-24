@@ -146,13 +146,24 @@ public class ImproperIntegral {
             return new CalculationResult(integral + ": revisa los límites", steps);
         }
 
-        // Con un parámetro, las asíntotas y el dominio se revisan con el parámetro = 1
-        Expression inspected = parameterized ? f.replace(new Variable(other), new Constant(1)) : f;
+        // Con un parámetro, las asíntotas deben ser las mismas con cualquier valor de él
+        List<Sample> samples = parameterized ? samples(f, new Variable(other), av, bv) : List.of();
+        Expression inspected = samples.isEmpty() ? f : samples.getFirst().f();
         List<Intersection> asymptotes = asymptotes(inspected, av, bv);
-        if (parameterized && !asymptotes.isEmpty()) {
-            steps.add(new SolutionStep("Se detectó una posible asíntota vertical: la convergencia puede "
-                    + "depender del parámetro " + other + "."));
-            return new CalculationResult(integral + ": depende de " + other, steps);
+        for (Sample sample : samples.subList(Math.min(1, samples.size()), samples.size())) {
+            List<Intersection> others = asymptotes(sample.f(), av, bv);
+            Optional<Double> outsideHere = outsideDomain(sample.f(), av, bv, others);
+            String with = "Con " + other + " = " + fmtShort(sample.value()) + ", " + names.f();
+            if (outsideHere.isPresent() || !samePoints(asymptotes, others)) {
+                String where = outsideHere.isPresent()
+                        ? " no está definida en " + variableName + " ≈ " + fmtShort(outsideHere.get())
+                        : others.isEmpty()
+                        ? " no tiene la asíntota de " + variableName + " = " + asymptotes.getFirst().value()
+                        : " no está acotada cerca de " + variableName + " = " + others.getFirst().value();
+                steps.add(new SolutionStep(with + where + ": los puntos problemáticos se mueven con "
+                        + other + ", así que la integral depende de su valor."));
+                return new CalculationResult(integral + ": depende de " + other, steps);
+            }
         }
         Optional<Double> outside = outsideDomain(inspected, av, bv, asymptotes);
         if (outside.isPresent()) {
@@ -201,7 +212,8 @@ public class ImproperIntegral {
                     : numericPiece(f, piece, names, steps, level);
             values.add(value);
             if (!value.isFinite()) {
-                if (parameterized) {
+                // Un límite infinito diverge con cualquier valor del parámetro; uno que no existe puede depender de él
+                if (parameterized && value.kind() == Limit.Kind.NONE) {
                     steps.add(new SolutionStep("No se puede concluir sin conocer el valor del parámetro "
                             + other + "."));
                     return new CalculationResult(integral + ": depende de " + other, steps);
@@ -253,6 +265,70 @@ public class ImproperIntegral {
         String integrand() {
             return f() + " d" + variable;
         }
+    }
+
+    // ------------------------------------------------------------ parámetro
+
+    /** Valores de prueba del parámetro: sin 0 ni enteros, para no caer en casos especiales. */
+    private static final double[] PARAMETER_VALUES = {1.1, -0.6, 0.4, -1.3, 2.9, -2.7};
+
+    /** f con el parámetro sustituido por un valor de prueba. */
+    private record Sample(double value, Expression f) {
+    }
+
+    /**
+     * Indica si una integral con parámetro es impropia: algún límite es
+     * infinito o, con algún valor de prueba del parámetro, f tiene una
+     * asíntota o sale del dominio en [a, b].
+     */
+    public static boolean isImproper(Expression f, Variable parameter, double a, double b) {
+        if (Double.isInfinite(a) || Double.isInfinite(b)) {
+            return true;
+        }
+        double from = Math.min(a, b);
+        double to = Math.max(a, b);
+        return samples(f, parameter, from, to).stream().anyMatch(sample -> {
+            List<Intersection> found = asymptotes(sample.f(), from, to);
+            return !found.isEmpty() || outsideDomain(sample.f(), from, to, found).isPresent();
+        });
+    }
+
+    /**
+     * f con cada valor de prueba del parámetro, sin los valores con que f no
+     * está definida en ningún punto de [a, b] (como √y con y < 0): esos
+     * quedan fuera del dominio del parámetro. Si ninguno sirve, f con el
+     * parámetro = 1.
+     */
+    private static List<Sample> samples(Expression f, Variable parameter, double a, double b) {
+        double from = Double.isFinite(a) ? a : (Double.isFinite(b) ? b : 0) - SEARCH_WIDTH;
+        double to = Double.isFinite(b) ? b : (Double.isFinite(a) ? a : 0) + SEARCH_WIDTH;
+        List<Sample> samples = new ArrayList<>();
+        for (double value : PARAMETER_VALUES) {
+            Expression g = f.replace(parameter, new Constant(value));
+            boolean defined = false;
+            for (int i = 0; i <= 200 && !defined; i++) {
+                defined = !Double.isNaN(g.evaluate(from + (to - from) * i / 200));
+            }
+            if (defined) {
+                samples.add(new Sample(value, g));
+            }
+        }
+        if (samples.isEmpty()) {
+            samples.add(new Sample(1, f.replace(parameter, new Constant(1))));
+        }
+        return samples;
+    }
+
+    private static boolean samePoints(List<Intersection> first, List<Intersection> second) {
+        if (first.size() != second.size()) {
+            return false;
+        }
+        for (int i = 0; i < first.size(); i++) {
+            if (Math.abs(first.get(i).x() - second.get(i).x()) > 1e-6) {
+                return false;
+            }
+        }
+        return true;
     }
 
     // ------------------------------------------------------------ tramos
