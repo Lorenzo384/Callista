@@ -83,27 +83,26 @@
           <toolTipText value="Número de subintervalos"/>
         </properties>
       </component>
-      <component id="08b0b" class="javax.swing.JLabel">
+      <component id="08b0a" class="javax.swing.JLabel">
         <constraints>
-          <grid row="2" column="0" row-span="1" col-span="2"
-                vsize-policy="0" hsize-policy="0" anchor="8"
-                fill="0" indent="0" use-parent-layout="false"/>
+          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <text value="Integrar respecto de:"/>
+          <text value="Variable:"/>
         </properties>
       </component>
-      <component id="08b0c" class="javax.swing.JComboBox" binding="variableComboBox">
+      <component id="08b0b" class="javax.swing.JComboBox" binding="variableComboBox">
         <constraints>
-          <grid row="2" column="2" row-span="1" col-span="2"
-                vsize-policy="0" hsize-policy="6" anchor="8"
-                fill="1" indent="0" use-parent-layout="false"/>
+          <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="1" indent="0" use-parent-layout="false">
+            <minimum-size width="60" height="-1"/>
+            <preferred-size width="90" height="-1"/>
+          </grid>
         </constraints>
         <properties>
           <toolTipText value="Variable respecto de la que se integra"/>
         </properties>
       </component>
-      <component id="08b0a" class="javax.swing.JTextArea" binding="hintArea">
+      <component id="08b0c" class="javax.swing.JTextArea" binding="hintArea">
         <constraints>
           <grid row="3" column="0" row-span="1" col-span="4" vsize-policy="0" hsize-policy="7" anchor="0" fill="1" indent="0" use-parent-layout="false">
             <minimum-size width="50" height="34"/>

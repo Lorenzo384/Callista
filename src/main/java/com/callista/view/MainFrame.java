@@ -106,7 +106,14 @@ public class MainFrame extends JFrame {
         revolutionPanel = new RevolutionPanel();
         parametersPanel.add(revolutionPanel.$$$getRootComponent$$$(), new com.intellij.uiDesigner.core.GridConstraints(4, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         indefiniteIntegralPanel = new JPanel();
-        parametersPanel.add(indefiniteIntegralPanel, new com.intellij.uiDesigner.core.GridConstraints(5, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        indefiniteIntegralPanel.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
+        parametersPanel.add(indefiniteIntegralPanel, new com.intellij.uiDesigner.core.GridConstraints(5, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label2 = new JLabel();
+        label2.setText("Variable:");
+        indefiniteIntegralPanel.add(label2, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        indefiniteVariableComboBox = new JComboBox();
+        indefiniteVariableComboBox.setToolTipText("Variable respecto de la que se integra");
+        indefiniteIntegralPanel.add(indefiniteVariableComboBox, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, new Dimension(60, -1), new Dimension(90, -1), null, 0, false));
         unavailableLabel = new JLabel();
         unavailableLabel.setText("Esta operación estará disponible próximamente.");
         parametersPanel.add(unavailableLabel, new com.intellij.uiDesigner.core.GridConstraints(6, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -159,20 +166,8 @@ public class MainFrame extends JFrame {
         statusLabel.setForeground(ViewStyles.secondaryTextColor());
         unavailableLabel.setForeground(ViewStyles.secondaryTextColor());
 
-        indefiniteIntegralPanel.setLayout(
-                new FlowLayout(FlowLayout.LEFT, 8, 0));
-
-        indefiniteVariableComboBox =
-                new JComboBox<>(new String[]{"x", "y"});
-
-        indefiniteVariableComboBox.setSelectedItem("x");
-        indefiniteVariableComboBox.setToolTipText(
-                "Variable respecto de la que se integra");
-
-        indefiniteIntegralPanel.add(
-                new JLabel("Integrar respecto de:"));
-
-        indefiniteIntegralPanel.add(indefiniteVariableComboBox);
+        indefiniteVariableComboBox.setModel(new DefaultComboBoxModel<>(new String[]{"x", "y"}));
+        indefiniteVariableComboBox.setFont(ViewStyles.MATH_FONT);
         operationComboBox.setRenderer(new OperationRenderer());
 
         // El teclado solo edita el texto de la expresión: no pasa por el controlador.

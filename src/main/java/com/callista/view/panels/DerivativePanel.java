@@ -47,37 +47,18 @@ public class DerivativePanel {
         orderComboBox = new JComboBox();
         orderComboBox.setToolTipText("Cuántas veces se deriva la función");
         rootPanel.add(orderComboBox, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final JLabel variableLabel = new JLabel();
-        variableLabel.setText("Derivar respecto de:");
-
-        rootPanel.add(variableLabel,
-                new com.intellij.uiDesigner.core.GridConstraints(
-                        1, 0, 1, 1,
-                        com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST,
-                        com.intellij.uiDesigner.core.GridConstraints.FILL_NONE,
-                        com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED,
-                        com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED,
-                        null, null, null, 0, false));
-
-        variableComboBox = new JComboBox();
-        variableComboBox.setToolTipText(
-                "Variable respecto de la que se calcula la derivada");
-
-        rootPanel.add(variableComboBox,
-                new com.intellij.uiDesigner.core.GridConstraints(
-                        1, 1, 1, 1,
-                        com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST,
-                        com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL,
-                        com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW
-                                | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW,
-                        com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED,
-                        null, null, null, 0, false));
         final JLabel label2 = new JLabel();
-        label2.setText("Evaluar en x =");
+        label2.setText("Variable:");
         rootPanel.add(label2, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        variableComboBox = new JComboBox();
+        variableComboBox.setToolTipText("Variable respecto de la que se deriva");
+        rootPanel.add(variableComboBox, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, new Dimension(60, -1), new Dimension(90, -1), null, 0, false));
+        final JLabel label3 = new JLabel();
+        label3.setText("Evaluar en x =");
+        rootPanel.add(label3, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         pointField = new JTextField();
         pointField.setToolTipText("Opcional: punto donde se evalúa la derivada");
-        rootPanel.add(pointField, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        rootPanel.add(pointField, new com.intellij.uiDesigner.core.GridConstraints(2, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         hintArea = new JTextArea();
         hintArea.setEditable(false);
         hintArea.setFocusable(false);
@@ -85,7 +66,7 @@ public class DerivativePanel {
         hintArea.setOpaque(false);
         hintArea.setText("Opcional: deja vacío para obtener solo la derivada.");
         hintArea.setWrapStyleWord(true);
-        rootPanel.add(hintArea, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 2, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, new Dimension(50, 34), new Dimension(150, 34), null, 0, false));
+        rootPanel.add(hintArea, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 2, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, new Dimension(50, 34), new Dimension(150, 34), null, 0, false));
     }
 
     /**
@@ -97,8 +78,8 @@ public class DerivativePanel {
 
     public DerivativePanel() {
         orderComboBox.setModel(new DefaultComboBoxModel<>(ORDERS));
-        variableComboBox.setModel(
-                new DefaultComboBoxModel<>(new String[]{"x", "y"}));
+        variableComboBox.setModel(new DefaultComboBoxModel<>(new String[]{"x", "y"}));
+        variableComboBox.setFont(ViewStyles.MATH_FONT);
         pointField.setFont(ViewStyles.MATH_FONT);
         hintArea.setFont(hintArea.getFont().deriveFont(12f));
         clearError();

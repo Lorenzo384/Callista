@@ -4,6 +4,17 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * Un término de una expresión simplificada: un coeficiente racional por un
+ * producto de factores {@code base^exponente}. Por ejemplo, {@code 3*x^2*sin(x)}
+ * es el coeficiente 3 con los factores {@code {x: 2, sin(x): 1}}.
+ *
+ * <p>Lo produce {@link Simplifier#terms(Expression)}; el integrador lo usa
+ * para separar la parte constante y reconocer formas como {@code c·xⁿ}.</p>
+ *
+ * @param coefficient coeficiente racional
+ * @param factors     bases con su exponente, en orden de aparición
+ */
 public record Monomial(Fraction coefficient, Map<Expression, Expression> factors) {
 
     public Monomial {

@@ -3,6 +3,7 @@ package com.callista.controller;
 import com.callista.model.CalculatorModel;
 import com.callista.model.calculus.revolution.RotationAxis;
 import com.callista.model.entity.CalculationResult;
+import com.callista.model.entity.OperationType;
 import com.callista.model.exception.InvalidExpressionException;
 import com.callista.model.exception.ParameterException;
 import com.callista.model.expression.Expression;
@@ -32,7 +33,7 @@ public class RevolutionController implements OperationController {
         Expression g;
         try {
             String text = parameters.getSecondFunctionText();
-            g = text.isBlank() ? model.xAxis() : model.interpret(text);
+            g = text.isBlank() ? model.xAxis() : model.interpret(text, OperationType.SOLID_OF_REVOLUTION);
         } catch (InvalidExpressionException e) {
             return invalid(parameters, Field.SECOND_FUNCTION, "g(x): " + e.getMessage(), e.getPosition());
         }

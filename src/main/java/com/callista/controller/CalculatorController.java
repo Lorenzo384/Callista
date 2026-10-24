@@ -77,7 +77,7 @@ public class CalculatorController {
 
         Expression function;
         try {
-            function = model.interpret(view.getExpressionText());
+            function = model.interpret(view.getExpressionText(), operation);
         } catch (InvalidExpressionException e) {
             view.showExpressionError(e.getMessage());
             view.focusExpressionAt(e.getPosition());

@@ -38,8 +38,6 @@ import java.util.Set;
  */
 public class CalculatorModel {
 
-
-
     /** Intervalo de x que se grafica cuando no hay un punto de interés. */
     private static final Range DEFAULT_X_RANGE = new Range(-10, 10);
     /** Ancho del intervalo de x alrededor de un punto de interés. */
@@ -52,6 +50,14 @@ public class CalculatorModel {
             EnumSet.of(OperationType.EVALUATE, OperationType.DERIVATIVE,
                     OperationType.INDEFINITE_INTEGRAL, OperationType.DEFINITE_INTEGRAL,
                     OperationType.AREA_BETWEEN_CURVES, OperationType.SOLID_OF_REVOLUTION);
+    /**
+     * Operaciones que aceptan y en la función. Las demás grafican y evalúan
+     * y = f(x), donde y no tendría valor.
+     */
+    private static final Set<OperationType> ACCEPTS_Y =
+            EnumSet.of(OperationType.DERIVATIVE, OperationType.INDEFINITE_INTEGRAL,
+                    OperationType.DEFINITE_INTEGRAL, OperationType.AREA_BETWEEN_CURVES);
+    private static final Variable Y = new Variable("y");
     private static final String[] ORDINALS = {"", "Primera", "Segunda", "Tercera"};
 
     private final ExpressionParser parser = new ExpressionParser();
@@ -77,6 +83,22 @@ public class CalculatorModel {
         Expression function = parser.parse(text);
         if (function.contains(Constant.INFINITY)) {
             throw new InvalidExpressionException("∞ solo se puede usar en los límites de una integral", 1);
+        }
+        return function;
+    }
+
+    /**
+     * Interpreta una función para la operación indicada: además de que sea
+     * válida, revisa que solo use y si la operación la acepta.
+     *
+     * @throws InvalidExpressionException si el texto no es válido o usa y
+     *                                    en una operación que solo trabaja con x
+     */
+    public Expression interpret(String text, OperationType operation) throws InvalidExpressionException {
+        Expression function = interpret(text);
+        if (!ACCEPTS_Y.contains(operation) && function.contains(Y)) {
+            throw new InvalidExpressionException("Esta operación solo usa x; y se acepta en derivadas, integrales y áreas",
+                    text.indexOf('y') + 1);
         }
         return function;
     }
@@ -197,9 +219,13 @@ public class CalculatorModel {
 
         boolean hasX = function.contains(new Variable("x"));
         boolean hasY = function.contains(new Variable("y"));
-        boolean partial = variableName.equals("y") || hasY;
+        // Es parcial si f también depende de la otra variable
+        String otherVariable = "x".equals(variableName) ? "y" : "x";
+        boolean partial = function.dependsOn(otherVariable);
+        // La gráfica es de y = f(x): no aplica si f usa y o se deriva respecto de y
+        boolean graphable = "x".equals(variableName) && !hasY;
 
-        if (point.isPresent() && partial) {
+        if (point.isPresent() && !graphable) {
             throw new IllegalArgumentException(
                     "La evaluación puntual de una derivada parcial requiere "
                             + "valores para x e y.");
@@ -251,7 +277,7 @@ public class CalculatorModel {
          * Las expresiones multivariables todavía no se representan
          * en la gráfica bidimensional existente.
          */
-        if (point.isEmpty() && partial) {
+        if (!graphable) {
             return new CalculationResult(summary, steps);
         }
 

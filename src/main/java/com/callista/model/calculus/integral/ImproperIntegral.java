@@ -50,7 +50,6 @@ public class ImproperIntegral {
     /** Pasos de la estimación numérica: hasta 10^7 o hasta 10^-8 del punto. */
     private static final int NUMERIC_STEPS = 8;
 
-    private static final Variable X = new Variable("x");
     private static final Variable T = new Variable("t");
 
     private final IndefiniteIntegral indefinite = new IndefiniteIntegral();
@@ -114,109 +113,79 @@ public class ImproperIntegral {
      * @param b límite superior: un número exacto o ∞
      */
     public CalculationResult solve(Expression f, Expression a, Expression b) {
+        return solve(f, a, b, "x");
+    }
+
+    /**
+     * Resuelve la integral impropia respecto de x o y. Si f también depende
+     * de la otra variable, esta queda como parámetro: la convergencia solo se
+     * decide cuando las reglas no dependen de su valor.
+     *
+     * @param a            límite inferior: un número exacto o -∞
+     * @param b            límite superior: un número exacto o ∞
+     * @param variableName variable de integración: x o y
+     */
+    public CalculationResult solve(Expression f, Expression a, Expression b, String variableName) {
+        if (!"x".equals(variableName) && !"y".equals(variableName)) {
+            throw new IllegalArgumentException("La variable de integración debe ser x o y.");
+        }
+        Variable variable = new Variable(variableName);
+        String other = "x".equals(variableName) ? "y" : "x";
+        boolean parameterized = f.dependsOn(other);
+        Names names = new Names(variableName, parameterized ? "(x,y)" : "(" + variableName + ")");
+        // La gráfica es de y = f(x): solo se dibuja si f es función de x sola
+        boolean graphable = "x".equals(variableName) && !parameterized;
+
         double av = a.evaluate(0);
         double bv = b.evaluate(0);
-
-        boolean parameterized = f.dependsOn("y");
-
-        String functionName = parameterized
-                ? "f(x,y)"
-                : "f(x)";
-
-        String integral =
-                "∫" + interval(a, b) + " " + functionName + " dx";
-
+        String integral = "∫" + interval(a, b) + " " + names.integrand();
         List<SolutionStep> steps = new ArrayList<>();
-
-        steps.add(new SolutionStep(
-                "Función: " + functionName + " = " + f));
+        steps.add(new SolutionStep("Función: " + names.f() + " = " + f));
         if (!(av < bv)) {
             steps.add(new SolutionStep("Con límites infinitos o asíntotas, escribe a < b."));
             return new CalculationResult(integral + ": revisa los límites", steps);
         }
 
-        Expression inspectionFunction = parameterized
-                ? f.replace(new Variable("y"), new Constant(1))
-                : f;
-
-        List<Intersection> asymptotes =
-                asymptotes(inspectionFunction, av, bv);
-
+        // Con un parámetro, las asíntotas y el dominio se revisan con el parámetro = 1
+        Expression inspected = parameterized ? f.replace(new Variable(other), new Constant(1)) : f;
+        List<Intersection> asymptotes = asymptotes(inspected, av, bv);
         if (parameterized && !asymptotes.isEmpty()) {
-            steps.add(new SolutionStep(
-                    "Se detectó una posible singularidad al analizar "
-                            + "la variable libre. La convergencia puede "
-                            + "depender del parámetro y."));
-
-            return new CalculationResult(
-                    integral + ": requiere analizar el parámetro y",
-                    steps);
+            steps.add(new SolutionStep("Se detectó una posible asíntota vertical: la convergencia puede "
+                    + "depender del parámetro " + other + "."));
+            return new CalculationResult(integral + ": depende de " + other, steps);
         }
-
-        Optional<Double> outside = outsideDomain(
-                inspectionFunction, av, bv, asymptotes);
-
+        Optional<Double> outside = outsideDomain(inspected, av, bv, asymptotes);
         if (outside.isPresent()) {
-            steps.add(new SolutionStep(
-                    "La función no está definida cerca de x ≈ "
-                            + fmt(outside.get())
-                            + " dentro de " + interval(a, b) + "."));
-
-            if (parameterized) {
-                return new CalculationResult(
-                        integral + ": requiere analizar el parámetro y",
-                        steps);
-            }
-
-            return new CalculationResult(
-                    integral + ": fuera del dominio",
-                    steps,
-                    graph(f, a, b));
+            steps.add(new SolutionStep(names.f() + " no está definida en " + variableName + " ≈ "
+                    + fmt(outside.get()) + ", dentro de " + interval(a, b)
+                    + ": el intervalo sale del dominio de f y la integral no tiene sentido."));
+            return new CalculationResult(integral + ": fuera del dominio", steps,
+                    graphable ? graph(f, a, b) : null);
         }
-        explainWhyImproper(a, b, av, bv, asymptotes, steps);
+        explainWhyImproper(a, b, av, bv, asymptotes, names, steps);
 
         List<Piece> pieces = pieces(a, b, av, bv, asymptotes);
         if (pieces.size() > 1) {
-            String sum = String.join(" + ", pieces.stream().map(p -> "∫" + p.interval() + " f(x) dx").toList());
+            String sum = String.join(" + ",
+                    pieces.stream().map(p -> "∫" + p.interval() + " " + names.integrand()).toList());
             steps.add(new SolutionStep("Se parte en tramos con un solo punto problemático cada uno: " + integral
                     + " = " + sum + ". Converge solo si todos los tramos convergen."));
         }
 
-        String antiderivativeName = parameterized
-                ? "F(x,y)"
-                : "F(x)";
-
-        steps.add(new SolutionStep(
-                "Buscar una antiderivada " + antiderivativeName
-                        + " de " + functionName + ":"));
-
+        steps.add(new SolutionStep("Buscar una antiderivada " + names.antiderivative() + " de " + names.f() + ":"));
         Optional<Expression> antiderivative;
-
         try {
-            Expression found = indefinite.antiderivative(f, steps, 1);
-
-            steps.add(new SolutionStep(
-                    "Antiderivada: " + antiderivativeName
-                            + " = " + found));
-
+            Expression found = indefinite.antiderivative(f, steps, 1, variableName);
+            steps.add(new SolutionStep("Antiderivada: " + names.antiderivative() + " = " + found));
             antiderivative = Optional.of(found);
-
         } catch (UnsupportedIntegralException e) {
-            steps.add(new SolutionStep(e.getMessage(), 1));
-
             if (parameterized) {
-                steps.add(new SolutionStep(
-                        "No se aplica Simpson automáticamente porque "
-                                + "podría evaluar incorrectamente la variable libre."));
-
-                return new CalculationResult(
-                        integral + ": no se encontró una antiderivada simbólica",
-                        steps);
+                // Simpson necesitaría un valor para el parámetro
+                steps.add(new SolutionStep(e.getMessage()
+                        + " Sin antiderivada no se puede estimar: el resultado depende de " + other + ".", 1));
+                return new CalculationResult(integral + ": no se encontró antiderivada", steps);
             }
-
-            steps.add(new SolutionStep(
-                    "Cada tramo se estima numéricamente.", 1));
-
+            steps.add(new SolutionStep(e.getMessage() + " Cada tramo se estima numéricamente.", 1));
             antiderivative = Optional.empty();
         }
 
@@ -225,29 +194,24 @@ public class ImproperIntegral {
             Piece piece = pieces.get(i);
             int level = pieces.size() > 1 ? 1 : 0;
             if (pieces.size() > 1) {
-                steps.add(new SolutionStep("Tramo " + (i + 1) + ": ∫" + piece.interval() + " f(x) dx"));
+                steps.add(new SolutionStep("Tramo " + (i + 1) + ": ∫" + piece.interval() + " " + names.integrand()));
             }
             Limit value = antiderivative.isPresent()
-                    ? exactPiece(antiderivative.get(), piece, steps, level)
-                    : numericPiece(f, piece, steps, level);
+                    ? exactPiece(antiderivative.get(), variable, piece, names, steps, level)
+                    : numericPiece(f, piece, names, steps, level);
             values.add(value);
             if (!value.isFinite()) {
                 if (parameterized) {
-                    steps.add(new SolutionStep(
-                            "La convergencia no se puede clasificar de forma "
-                                    + "general sin analizar la dependencia del "
-                                    + "parámetro y."));
-
-                    return new CalculationResult(
-                            integral + ": requiere analizar el parámetro y",
-                            steps);
+                    steps.add(new SolutionStep("No se puede concluir sin conocer el valor del parámetro "
+                            + other + "."));
+                    return new CalculationResult(integral + ": depende de " + other, steps);
                 }
                 String why = value.kind() == Limit.Kind.NONE ? "el límite no existe" : "el límite es " + value;
                 String which = pieces.size() > 1 ? "Este tramo diverge (" + why + "), así que " + integral
                         + " diverge" : "Conclusión: " + why + ", así que la integral diverge";
                 steps.add(new SolutionStep(which));
                 return new CalculationResult(integral + " diverge" + (value.isInfinite() ? " (" + value + ")" : ""),
-                        steps, graph(f, a, b));
+                        steps, graphable ? graph(f, a, b) : null);
             }
         }
 
@@ -266,85 +230,29 @@ public class ImproperIntegral {
         String equals = exact ? " = " : " ";
         steps.add(new SolutionStep("Conclusión: el límite es un número, así que la integral converge: "
                 + integral + equals + result));
-        return new CalculationResult(integral + equals + result + " (converge)", steps, graph(f, a, b));
+        return new CalculationResult(integral + equals + result + " (converge)", steps,
+                graphable ? graph(f, a, b) : null);
     }
 
     /**
-     * Resuelve una integral impropia respecto de x o y.
+     * Cómo se escriben f, F y el integrando según la variable:
+     * {@code f(x)}, {@code f(y)} o {@code f(x,y)}, con {@code dx} o {@code dy}.
      *
-     * Para y, convierte temporalmente la variable de integración a x,
-     * reutiliza el procedimiento existente y adapta los textos del resultado.
-     *
-     * Las expresiones que dependen de la variable restante se rechazan
-     * para evitar conclusiones incorrectas sobre su convergencia.
+     * @param arguments {@code (x)}, {@code (y)} o {@code (x,y)}
      */
-    /**
-     * Resuelve una integral impropia respecto de x o y.
-     * Para integrar respecto de y, intercambia las variables de forma
-     * temporal y traduce el resultado al finalizar.
-     */
-    public CalculationResult solve(
-            Expression f,
-            Expression a,
-            Expression b,
-            String variableName) {
-
-        if (!"x".equals(variableName) && !"y".equals(variableName)) {
-            throw new IllegalArgumentException(
-                    "La variable de integración debe ser x o y.");
+    private record Names(String variable, String arguments) {
+        String f() {
+            return "f" + arguments;
         }
 
-        if ("x".equals(variableName)) {
-            return solve(f, a, b);
+        String antiderivative() {
+            return "F" + arguments;
         }
 
-        /*
-         * Intercambio simultáneo: x -> z, y -> x, z -> y.
-         * La variable que se integra pasa a ser x y la otra queda como y.
-         */
-        Variable z = new Variable("z");
-
-        Expression transformed = f
-                .replace(X, z)
-                .replace(new Variable("y"), X)
-                .replace(z, new Variable("y"));
-
-        CalculationResult result = solve(transformed, a, b);
-
-        List<SolutionStep> translatedSteps = result.getSteps().stream()
-                .map(step -> new SolutionStep(
-                        swapXYText(step.getDescription()),
-                        step.getLevel()))
-                .toList();
-
-        return new CalculationResult(
-                swapXYText(result.getSummary()),
-                translatedSteps);
-    }
-
-    /**
-     * Intercambia x e y en los textos sin confundir las apariciones de dx y dy.
-     */
-    private static String swapXYText(String text) {
-        String result = text
-                .replace("dx", "@@DX@@")
-                .replace("dy", "@@DY@@");
-
-        result = result.replaceAll(
-                "(?<![\\p{L}\\p{N}])x(?![\\p{L}\\p{N}])",
-                "@@VAR_X@@");
-
-        result = result.replaceAll(
-                "(?<![\\p{L}\\p{N}])y(?![\\p{L}\\p{N}])",
-                "@@VAR_Y@@");
-
-        return result
-                .replace("@@VAR_X@@", "y")
-                .replace("@@VAR_Y@@", "x")
-                .replace("@@DX@@", "dy")
-                .replace("@@DY@@", "dx")
-                .replace("f(y,x)", "f(x,y)")
-                .replace("F(y,x)", "F(x,y)");
+        /** {@code f(x) dx}. */
+        String integrand() {
+            return f() + " d" + variable;
+        }
     }
 
     // ------------------------------------------------------------ tramos
@@ -414,11 +322,12 @@ public class ImproperIntegral {
      * Tramo con antiderivada: lim t→b [F(t) - F(a)] o lim t→a [F(b) - F(t)].
      * Sin extremo problemático, es el Teorema Fundamental.
      */
-    private Limit exactPiece(Expression antiderivative, Piece piece, List<SolutionStep> steps, int level) {
-        Expression atT = antiderivative.replace(X, T);
+    private Limit exactPiece(Expression antiderivative, Variable variable, Piece piece, Names names,
+                             List<SolutionStep> steps, int level) {
+        Expression atT = antiderivative.replace(variable, T);
         if (!piece.badFrom() && !piece.badTo()) {
-            Expression value = Simplifier.simplify(new Difference(antiderivative.replace(X, piece.to()),
-                    antiderivative.replace(X, piece.from())));
+            Expression value = Simplifier.simplify(new Difference(antiderivative.replace(variable, piece.to()),
+                    antiderivative.replace(variable, piece.from())));
             steps.add(new SolutionStep("Sin puntos problemáticos: F(" + piece.to() + ") - F(" + piece.from() + ") = "
                     + withApproximation(value), level));
             return Limit.finite(value);
@@ -429,19 +338,20 @@ public class ImproperIntegral {
         if (piece.badTo()) {
             target = Double.isInfinite(piece.to().evaluate(0)) ? LimitPoint.positiveInfinity()
                     : LimitPoint.fromLeft(piece.to());
-            difference = new Difference(atT, antiderivative.replace(X, piece.from()));
+            difference = new Difference(atT, antiderivative.replace(variable, piece.from()));
             inner = "[F(t) - F(" + piece.from() + ")]";
         } else {
             target = Double.isInfinite(piece.from().evaluate(0)) ? LimitPoint.negativeInfinity()
                     : LimitPoint.fromRight(piece.from());
-            difference = new Difference(antiderivative.replace(X, piece.to()), atT);
+            difference = new Difference(antiderivative.replace(variable, piece.to()), atT);
             inner = "[F(" + piece.to() + ") - F(t)]";
         }
         Expression g = Simplifier.simplify(difference);
         String lim = "lim " + target.describe("t");
         String partial = piece.badTo() ? "∫[" + piece.from() + ", t]" : "∫[t, " + piece.to() + "]";
-        steps.add(new SolutionStep("Como límite: ∫" + piece.interval() + " f(x) dx = " + lim + " " + partial
-                + " f(x) dx = " + lim + " " + inner + " = " + lim + " (" + g + ")", level));
+        steps.add(new SolutionStep("Como límite: ∫" + piece.interval() + " " + names.integrand() + " = " + lim + " "
+                + partial + " " + names.integrand() + " = " + lim + " " + inner + " = " + lim + " (" + g + ")",
+                level));
         Limit value = limits.limit(g, T, target, steps, level + 1);
         steps.add(new SolutionStep(lim + " (" + g + ") = " + value, level));
         return value;
@@ -451,7 +361,8 @@ public class ImproperIntegral {
      * Tramo sin antiderivada: se integra con Simpson hasta t cada vez más
      * cerca del extremo problemático y se observa si el valor se estabiliza.
      */
-    private static Limit numericPiece(Expression f, Piece piece, List<SolutionStep> steps, int level) {
+    private static Limit numericPiece(Expression f, Piece piece, Names names, List<SolutionStep> steps,
+                                      int level) {
         double from = piece.from().evaluate(0);
         double to = piece.to().evaluate(0);
         if (!piece.badFrom() && !piece.badTo()) {
@@ -481,7 +392,8 @@ public class ImproperIntegral {
             previous = t;
             String integral = upper ? "∫[" + fmtShort(fixed) + ", " + fmtShort(t) + "]"
                     : "∫[" + fmtShort(t) + ", " + fmtShort(fixed) + "]";
-            steps.add(new SolutionStep("t = " + fmtShort(t) + ":   " + integral + " f(x) dx ≈ " + fmt(total),
+            steps.add(new SolutionStep("t = " + fmtShort(t) + ":   " + integral + " " + names.integrand() + " ≈ "
+                    + fmt(total),
                     level + 1));
         }
         boolean settles = Double.isFinite(total) && increment < 1e-4 * (1 + Math.abs(total))
@@ -497,7 +409,8 @@ public class ImproperIntegral {
 
     /** Explica por qué es impropia: tipo 1 (intervalo infinito) o tipo 2 (asíntota). */
     private static void explainWhyImproper(Expression a, Expression b, double av, double bv,
-                                           List<Intersection> asymptotes, List<SolutionStep> steps) {
+                                           List<Intersection> asymptotes, Names names,
+                                           List<SolutionStep> steps) {
         List<String> reasons = new ArrayList<>();
         if (Double.isInfinite(av) && Double.isInfinite(bv)) {
             reasons.add("los dos límites son infinitos");
@@ -508,8 +421,9 @@ public class ImproperIntegral {
         }
         String type1 = reasons.isEmpty() ? "" : "Integral impropia de tipo 1 (intervalo infinito): "
                 + reasons.getFirst() + ".";
-        String places = String.join(", ", asymptotes.stream().map(p -> "x = " + p.value()).toList());
-        String type2 = asymptotes.isEmpty() ? "" : "Integral impropia de tipo 2: f(x) no está acotada cerca de "
+        String places = String.join(", ", asymptotes.stream().map(p -> names.variable() + " = " + p.value()).toList());
+        String type2 = asymptotes.isEmpty() ? "" : "Integral impropia de tipo 2: " + names.f()
+                + " no está acotada cerca de "
                 + places + " (asíntota vertical).";
         steps.add(new SolutionStep((type1 + " " + type2).trim()));
     }

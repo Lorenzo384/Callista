@@ -65,24 +65,12 @@ public class AreaPanel {
         upperField = new JTextField();
         upperField.setToolTipText("Opcional: límite superior");
         rootPanel.add(upperField, new com.intellij.uiDesigner.core.GridConstraints(1, 3, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(60, -1), null, 0, false));
-        final JLabel variableLabel = new JLabel();
-        variableLabel.setText("Integrar respecto de:");
-        rootPanel.add(variableLabel, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1,
-                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST,
-                com.intellij.uiDesigner.core.GridConstraints.FILL_NONE,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        variableComboBox = new JComboBox<>();
-        variableComboBox.addItem("x");
-        variableComboBox.addItem("y");
-        variableComboBox.setToolTipText("Variable respecto de la que se calcula el área");
-        rootPanel.add(variableComboBox, new com.intellij.uiDesigner.core.GridConstraints(2, 1, 1, 3,
-                com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST,
-                com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW
-                        | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW,
-                com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null,
-                new Dimension(60, -1), null, 0, false));
+        final JLabel label4 = new JLabel();
+        label4.setText("Variable:");
+        rootPanel.add(label4, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_NONE, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        variableComboBox = new JComboBox();
+        variableComboBox.setToolTipText("Variable respecto de la que se integra el área");
+        rootPanel.add(variableComboBox, new com.intellij.uiDesigner.core.GridConstraints(2, 1, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, new Dimension(60, -1), new Dimension(90, -1), null, 0, false));
         hintArea = new JTextArea();
         hintArea.setEditable(false);
         hintArea.setFocusable(false);
@@ -107,6 +95,7 @@ public class AreaPanel {
         secondFunctionField.putClientProperty("JTextField.placeholderText", "0 (función cero)");
         lowerField.putClientProperty("JTextField.placeholderText", "1.er corte");
         upperField.putClientProperty("JTextField.placeholderText", "último corte");
+        variableComboBox.setModel(new DefaultComboBoxModel<>(new String[]{"x", "y"}));
         variableComboBox.setFont(ViewStyles.MATH_FONT);
         variableComboBox.addActionListener(e -> clearError());
         hintArea.setFont(hintArea.getFont().deriveFont(12f));

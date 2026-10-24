@@ -119,41 +119,14 @@ public class DefiniteIntegral {
         List<SolutionStep> steps = new ArrayList<>();
         steps.add(new SolutionStep("Función: " + functionName + " = " + f));
 
-        boolean infiniteBounds = !Double.isFinite(av) || !Double.isFinite(bv);
-
-        boolean detectedImproper = !infiniteBounds
-                && !hasOtherVariable
-                && ImproperIntegral.isImproper(
-                f, Math.min(av, bv), Math.max(av, bv));
-
-        /*
-         * La clasificación actual de integrales impropias fue diseñada
-         * para una función univariada respecto de x.
-         * No se usa ese cálculo cuando queda otra variable como parámetro.
-         */
-        if (infiniteBounds || detectedImproper) {
-            if (infiniteBounds || !hasOtherVariable) {
-                return improper.solve(f, a, b, variableName);
-            }
-
-            steps.add(new SolutionStep(
-                    "Esta integral requiere adaptar el cálculo de integrales "
-                            + "impropias para la variable seleccionada y, "
-                            + "cuando corresponda, para la otra variable."));
-
-            return new CalculationResult(
-                    integral + ": requiere tratamiento de integral impropia",
-                    steps);
+        // Con un parámetro, las asíntotas y el dominio se revisan con el parámetro = 1
+        Expression inspected = hasOtherVariable
+                ? f.replace(new Variable(otherVariable), new Constant(1))
+                : f;
+        if (ImproperIntegral.isImproper(inspected, av, bv)) {
+            return improper.solve(f, a, b, variableName);
         }
-
-        /*
-         * No se analiza f(x,y) asignando accidentalmente el mismo valor
-         * a las dos variables. La detección univariada se conserva.
-         */
-        OptionalDouble gap = hasOtherVariable
-                ? OptionalDouble.empty()
-                : firstDiscontinuity(
-                f, Math.min(av, bv), Math.max(av, bv));
+        OptionalDouble gap = firstDiscontinuity(inspected, Math.min(av, bv), Math.max(av, bv));
 
         boolean graphable =
                 "x".equals(variableName) && !hasOtherVariable;
@@ -234,13 +207,8 @@ public class DefiniteIntegral {
                 ? "F(x,y)"
                 : "F(" + variableName + ")";
 
-        String atBName = atB.dependsOnVariable()
-                ? "F(" + b + ", " + otherVariable + ")"
-                : "F(" + b + ")";
-
-        String atAName = atA.dependsOnVariable()
-                ? "F(" + a + ", " + otherVariable + ")"
-                : "F(" + a + ")";
+        String atBName = antiderivativeAt(b, variableName, hasOtherVariable);
+        String atAName = antiderivativeAt(a, variableName, hasOtherVariable);
 
         steps.add(new SolutionStep(
                 "Antiderivada: " + antiderivativeName
@@ -355,6 +323,17 @@ public class DefiniteIntegral {
         return OptionalDouble.empty();
     }
 
+
+    /**
+     * {@code F(2)}; con un parámetro, {@code F(2, y)} o {@code F(x, 2)}
+     * según la variable de integración.
+     */
+    private static String antiderivativeAt(Expression point, String variableName, boolean parameterized) {
+        if (!parameterized) {
+            return "F(" + point + ")";
+        }
+        return "x".equals(variableName) ? "F(" + point + ", y)" : "F(x, " + point + ")";
+    }
 
     /** {@code 1/3 ≈ 0.3333333333}, o solo el número si ya es un número. */
     private static String withApproximation(Expression e) {

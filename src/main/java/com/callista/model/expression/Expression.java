@@ -37,44 +37,37 @@ public interface Expression {
     double evaluate(double x);
 
     /**
-     * Indica si la expresión depende de la variable. Las que no dependen
-     * (como {@code 3}, {@code π^2} o {@code ln(2)}) se tratan como constantes
-     * al derivar o integrar.
-     */
-    /**
-     * Evalúa una expresión usando valores independientes para x e y.
-     *
-     * La variable y se sustituye por una constante antes de evaluar
-     * el resultado respecto de x.
+     * Evalúa con valores distintos para x e y: y se sustituye por una
+     * constante y el resultado se evalúa en x. ({@link #evaluate(double)}
+     * da a cualquier variable el mismo valor.)
      *
      * @param x valor de la variable x
      * @param y valor de la variable y
-     * @return resultado numérico de la expresión
      */
     default double evaluate(double x, double y) {
-        Expression expressionWithYReplaced =
-                replace(new Variable("y"), new Constant(y));
-
-        return expressionWithYReplaced.evaluate(x);
+        return replace(new Variable("y"), new Constant(y)).evaluate(x);
     }
 
+    /**
+     * Indica si la expresión depende de la variable. Las que no dependen
+     * (como {@code 3}, {@code π^2} o {@code ln(2)}) se tratan como constantes
+     * al derivar o integrar. Cualquier variable cuenta, x o y.
+     */
     boolean dependsOnVariable();
+
+    /**
+     * Indica si la expresión depende de la variable con ese nombre: en
+     * {@code x*y}, de x y de y; en {@code x^2}, solo de x.
+     */
+    default boolean dependsOn(String variableName) {
+        return contains(new Variable(variableName));
+    }
 
     /**
      * Copia de la expresión donde cada aparición de {@code target} se cambia
      * por {@code replacement}. Se usa en la sustitución: cambiar {@code x^2}
      * por {@code u}, o regresar de {@code u} a {@code x^2}.
      */
-    /**
-     * Indica si la expresión contiene una variable específica.
-     *
-     * @param variableName nombre de la variable que se busca
-     * @return true si la expresión contiene esa variable
-     */
-    default boolean dependsOn(String variableName) {
-        return contains(new Variable(variableName));
-    }
-
     Expression replace(Expression target, Expression replacement);
 
     /**
