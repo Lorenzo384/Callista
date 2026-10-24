@@ -41,6 +41,23 @@ public interface Expression {
      * (como {@code 3}, {@code π^2} o {@code ln(2)}) se tratan como constantes
      * al derivar o integrar.
      */
+    /**
+     * Evalúa una expresión usando valores independientes para x e y.
+     *
+     * La variable y se sustituye por una constante antes de evaluar
+     * el resultado respecto de x.
+     *
+     * @param x valor de la variable x
+     * @param y valor de la variable y
+     * @return resultado numérico de la expresión
+     */
+    default double evaluate(double x, double y) {
+        Expression expressionWithYReplaced =
+                replace(new Variable("y"), new Constant(y));
+
+        return expressionWithYReplaced.evaluate(x);
+    }
+
     boolean dependsOnVariable();
 
     /**
@@ -48,6 +65,16 @@ public interface Expression {
      * por {@code replacement}. Se usa en la sustitución: cambiar {@code x^2}
      * por {@code u}, o regresar de {@code u} a {@code x^2}.
      */
+    /**
+     * Indica si la expresión contiene una variable específica.
+     *
+     * @param variableName nombre de la variable que se busca
+     * @return true si la expresión contiene esa variable
+     */
+    default boolean dependsOn(String variableName) {
+        return contains(new Variable(variableName));
+    }
+
     Expression replace(Expression target, Expression replacement);
 
     /**

@@ -60,7 +60,7 @@ public class IntegrationByParts implements IntegrationTechnique {
     private record Parts(Expression boundary, Expression remaining) {
     }
 
-    private final DerivativeCalculator derivatives = new DerivativeCalculator();
+
 
     @Override
     public Optional<Expression> integrate(Monomial integrand, IntegrationContext context, int level) {
@@ -129,6 +129,8 @@ public class IntegrationByParts implements IntegrationTechnique {
         }
 
         String x = context.variableName();
+        DerivativeCalculator derivatives = new DerivativeCalculator(x);
+
         Expression f = integrand.toExpression();
         Expression u = new Monomial(integrand.coefficient(), uFactors).toExpression();
         Expression dv = alone ? new Constant(1) : new Monomial(Fraction.ONE, dvFactors).toExpression();
@@ -157,9 +159,16 @@ public class IntegrationByParts implements IntegrationTechnique {
         if (terms.size() != 1) {
             return Optional.empty();
         }
-        Expression c = terms.getFirst().constantPart().toExpression();
+        Expression c = terms.getFirst()
+                .constantPart(context.variableName())
+                .toExpression();
+
         int checkpoint = context.checkpoint();
-        Optional<Parts> second = applyOnce(terms.getFirst().variablePart(), context, level + 1);
+
+        Optional<Parts> second = applyOnce(
+                terms.getFirst().variablePart(context.variableName()),
+                context,
+                level + 1);
         if (second.isPresent()) {
             // I = A₁ - c·(A₂ - ∫w₂) = A₁ - c·A₂ + c·∫w₂, con c·w₂ = k·I
             Optional<Expression> k = ratio(new Product(c, second.get().remaining()), f);

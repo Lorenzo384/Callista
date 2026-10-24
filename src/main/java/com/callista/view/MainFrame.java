@@ -53,7 +53,8 @@ public class MainFrame extends JFrame {
     private AreaPanel areaPanel;
     private RevolutionPanel revolutionPanel;
     private JLabel unavailableLabel;
-    private JLabel noParametersLabel;
+    private JPanel indefiniteIntegralPanel;
+    private JComboBox<String> indefiniteVariableComboBox;
     private KeypadPanel keypadPanel;
     private ActionPanel actionPanel;
     private ResultPanel resultPanel;
@@ -104,9 +105,8 @@ public class MainFrame extends JFrame {
         parametersPanel.add(areaPanel.$$$getRootComponent$$$(), new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         revolutionPanel = new RevolutionPanel();
         parametersPanel.add(revolutionPanel.$$$getRootComponent$$$(), new com.intellij.uiDesigner.core.GridConstraints(4, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_CENTER, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_SHRINK | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        noParametersLabel = new JLabel();
-        noParametersLabel.setText("Sin parámetros: se calcula ∫ f(x) dx + C.");
-        parametersPanel.add(noParametersLabel, new com.intellij.uiDesigner.core.GridConstraints(5, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        indefiniteIntegralPanel = new JPanel();
+        parametersPanel.add(indefiniteIntegralPanel, new com.intellij.uiDesigner.core.GridConstraints(5, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         unavailableLabel = new JLabel();
         unavailableLabel.setText("Esta operación estará disponible próximamente.");
         parametersPanel.add(unavailableLabel, new com.intellij.uiDesigner.core.GridConstraints(6, 0, 1, 1, com.intellij.uiDesigner.core.GridConstraints.ANCHOR_WEST, com.intellij.uiDesigner.core.GridConstraints.FILL_HORIZONTAL, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_CAN_GROW | com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_WANT_GROW, com.intellij.uiDesigner.core.GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -157,7 +157,21 @@ public class MainFrame extends JFrame {
 
         statusLabel.setForeground(ViewStyles.secondaryTextColor());
         unavailableLabel.setForeground(ViewStyles.secondaryTextColor());
-        noParametersLabel.setForeground(ViewStyles.secondaryTextColor());
+
+        indefiniteIntegralPanel.setLayout(
+                new FlowLayout(FlowLayout.LEFT, 8, 0));
+
+        indefiniteVariableComboBox =
+                new JComboBox<>(new String[]{"x", "y"});
+
+        indefiniteVariableComboBox.setSelectedItem("x");
+        indefiniteVariableComboBox.setToolTipText(
+                "Variable respecto de la que se integra");
+
+        indefiniteIntegralPanel.add(
+                new JLabel("Integrar respecto de:"));
+
+        indefiniteIntegralPanel.add(indefiniteVariableComboBox);
         operationComboBox.setRenderer(new OperationRenderer());
 
         // El teclado solo edita el texto de la expresión: no pasa por el controlador.
@@ -195,7 +209,8 @@ public class MainFrame extends JFrame {
         integralPanel.setVisible(operation == OperationType.DEFINITE_INTEGRAL);
         areaPanel.setVisible(operation == OperationType.AREA_BETWEEN_CURVES);
         revolutionPanel.setVisible(operation == OperationType.SOLID_OF_REVOLUTION);
-        noParametersLabel.setVisible(operation == OperationType.INDEFINITE_INTEGRAL && available);
+        indefiniteIntegralPanel.setVisible(
+                operation == OperationType.INDEFINITE_INTEGRAL && available);
         unavailableLabel.setVisible(!available);
         actionPanel.setCalculateEnabled(available);
         parametersPanel.revalidate();
@@ -251,6 +266,12 @@ public class MainFrame extends JFrame {
      */
     public IntegralPanel getIntegralPanel() {
         return integralPanel;
+    }
+    /**
+     * Devuelve la variable seleccionada para la integral indefinida.
+     */
+    public String getIndefiniteIntegralVariableName() {
+        return (String) indefiniteVariableComboBox.getSelectedItem();
     }
 
     /**

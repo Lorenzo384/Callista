@@ -9,6 +9,9 @@ import com.callista.model.exception.ParameterException;
 import com.callista.model.expression.Expression;
 import com.callista.model.parser.ExpressionParser;
 import org.junit.jupiter.api.Test;
+import com.callista.model.expression.Constant;
+import com.callista.model.expression.Constant;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
@@ -41,6 +44,37 @@ class DefiniteIntegralTest {
         assertTrue(steps.contains("Resultado: Δx/2·Σ = (0.5/2)·11 = 2.75"));
         assertTrue(steps.getLast().startsWith("Valor de referencia (Simpson con n = 10000): 2.666666667"));
         assertTrue(steps.getLast().endsWith("error estimado ≈ 0.08333"));
+    }
+
+    @Test
+    void integratesImproperMultivariableExpressionsWithParameters()
+            throws InvalidExpressionException {
+
+        Expression one = new Constant(1);
+        Expression infinity =
+                new Constant(Double.POSITIVE_INFINITY);
+
+        CalculationResult withRespectToX = integral.exact(
+                f("y/x^2"), one, infinity, "x");
+
+        assertTrue(
+                withRespectToX.getSummary().contains("f(x,y) dx"),
+                withRespectToX.getSummary());
+
+        assertTrue(
+                withRespectToX.getSummary().contains("y (converge)"),
+                withRespectToX.getSummary());
+
+        CalculationResult withRespectToY = integral.exact(
+                f("x/y^2"), one, infinity, "y");
+
+        assertTrue(
+                withRespectToY.getSummary().contains("f(x,y) dy"),
+                withRespectToY.getSummary());
+
+        assertTrue(
+                withRespectToY.getSummary().contains("x (converge)"),
+                withRespectToY.getSummary());
     }
 
     @Test
@@ -130,11 +164,75 @@ class DefiniteIntegralTest {
     }
 
     @Test
+    void preservesTheOtherVariableInExactDefiniteIntegrals()
+            throws InvalidExpressionException {
+
+        Expression function = f("x^3 + 3y");
+
+        CalculationResult withRespectToX =
+                integral.exact(function, f("0"), f("2"), "x");
+
+        CalculationResult withRespectToY =
+                integral.exact(function, f("0"), f("2"), "y");
+
+        assertTrue(
+                withRespectToX.getSummary()
+                        .startsWith("∫[0, 2] f(x,y) dx ="));
+
+        assertTrue(withRespectToX.getSummary().contains("y"));
+        assertFalse(withRespectToX.getSummary().contains("≈"));
+
+        assertTrue(
+                withRespectToY.getSummary()
+                        .startsWith("∫[0, 2] f(x,y) dy ="));
+
+        assertTrue(withRespectToY.getSummary().contains("x"));
+        assertFalse(withRespectToY.getSummary().contains("≈"));
+    }
+
+    @Test
     void treatsAnAsymptoteInsideAsAnImproperIntegral() throws InvalidExpressionException {
         // Aplicar F(b) - F(a) a 1/x² en [-1, 1] daría -2, que es falso: la integral diverge
         CalculationResult result = exact("1/x^2", "-1", "1");
         assertEquals("∫[-1, 1] f(x) dx diverge (∞)", result.getSummary());
         assertTrue(steps(result).getLast().contains("diverge"));
+    }
+
+    @Test
+    void handlesImproperIntegralsWithRespectToY()
+            throws InvalidExpressionException {
+
+        Expression one = new Constant(1);
+        Expression positiveInfinity =
+                new Constant(Double.POSITIVE_INFINITY);
+
+        CalculationResult convergent = integral.exact(
+                f("1/y^2"),
+                one,
+                positiveInfinity,
+                "y");
+
+        assertTrue(
+                convergent.getSummary().contains("f(y) dy"),
+                convergent.getSummary());
+
+        assertTrue(
+                convergent.getSummary().contains("converge"),
+                convergent.getSummary());
+
+        CalculationResult divergent = integral.exact(
+                f("1/y"),
+                one,
+                positiveInfinity,
+                "y");
+
+        assertTrue(
+                divergent.getSummary().contains("f(y) dy"),
+                divergent.getSummary());
+
+        assertTrue(
+                divergent.getSummary().contains("diverge"),
+                divergent.getSummary());
     }
 
     @Test

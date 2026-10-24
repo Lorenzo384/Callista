@@ -56,19 +56,50 @@ public class IndefiniteIntegral {
      *
      * @throws UnsupportedIntegralException si ninguna técnica funciona
      */
-    public Expression antiderivative(Expression f) throws UnsupportedIntegralException {
-        return antiderivative(f, new ArrayList<>(), 0);
+
+
+    /**
+     * Antiderivada respecto de x, sin pasos.
+     */
+    public Expression antiderivative(Expression f)
+            throws UnsupportedIntegralException {
+        return antiderivative(f, new ArrayList<>(), 0, "x");
     }
 
     /**
-     * Antiderivada (sin la constante C), agregando a {@code steps} la
-     * explicación de cada regla y técnica.
-     *
-     * @throws UnsupportedIntegralException si ninguna técnica funciona
+     * Antiderivada respecto de la variable indicada, sin pasos.
      */
-    public Expression antiderivative(Expression f, List<SolutionStep> steps, int baseLevel)
+    public Expression antiderivative(Expression f, String variableName)
             throws UnsupportedIntegralException {
-        return Simplifier.simplify(new Integration(steps, "x", 0).integrateHere(f, baseLevel));
+        return antiderivative(f, new ArrayList<>(), 0, variableName);
+    }
+
+    /**
+     * Antiderivada respecto de x, registrando los pasos.
+     */
+    public Expression antiderivative(
+            Expression f, List<SolutionStep> steps, int baseLevel)
+            throws UnsupportedIntegralException {
+        return antiderivative(f, steps, baseLevel, "x");
+    }
+
+    /**
+     * Antiderivada respecto de la variable indicada, registrando los pasos.
+     */
+    public Expression antiderivative(
+            Expression f,
+            List<SolutionStep> steps,
+            int baseLevel,
+            String variableName) throws UnsupportedIntegralException {
+
+        if (!"x".equals(variableName) && !"y".equals(variableName)) {
+            throw new IllegalArgumentException(
+                    "La variable de integración debe ser x o y.");
+        }
+
+        return Simplifier.simplify(
+                new Integration(steps, variableName, 0)
+                        .integrateHere(f, baseLevel));
     }
 
     /**
@@ -76,38 +107,136 @@ public class IndefiniteIntegral {
      * no encuentra antiderivada, lo explica en el resultado.
      */
     public CalculationResult solve(Expression f) {
-        List<SolutionStep> steps = new ArrayList<>();
-        steps.add(new SolutionStep("Función: f(x) = " + f));
-        Expression antiderivative;
-        try {
-            antiderivative = antiderivative(f, steps, 0);
-        } catch (UnsupportedIntegralException e) {
-            steps.add(new SolutionStep(e.getMessage()));
-            steps.add(new SolutionStep("Si necesitas un valor, usa el modo «Integral definida» con un método "
-                    + "numérico: no requiere antiderivada."));
-            Graph graph = new Graph(List.of(new GraphCurve("f(x) = " + f, f, CurveStyle.FUNCTION)), List.of(),
-                    new Range(-10, 10));
-            return new CalculationResult("∫f(x) dx: no se encontró antiderivada", steps, graph);
-        }
-
-        steps.add(new SolutionStep("Resultado: ∫f(x) dx = " + antiderivative + " + C"));
-        steps.add(new SolutionStep(verification(f, antiderivative)));
-
-        Graph graph = new Graph(List.of(
-                new GraphCurve("f(x) = " + f, f, CurveStyle.FUNCTION),
-                new GraphCurve("F(x) = " + antiderivative + "  (C = 0)", antiderivative, CurveStyle.ANTIDERIVATIVE)),
-                List.of(), new Range(-10, 10));
-        return new CalculationResult("∫f(x) dx = " + antiderivative + " + C", steps, graph);
+        return solve(f, "x");
     }
 
     /**
-     * Comprueba el resultado derivándolo: d/dx[F(x)] debe dar f(x). Se
-     * compara en varios puntos donde ambas existen.
+     * Resuelve una integral indefinida respecto de la variable indicada.
      */
-    private String verification(Expression f, Expression antiderivative) {
-        Expression derivative = Simplifier.simplify(derivatives.derive(antiderivative));
-        return "Comprobación: d/dx[" + antiderivative + "] = " + derivative
-                + (sameFunction(f, derivative) ? " = f(x) ✓" : " ≠ f(x) ✗");
+    public CalculationResult solve(Expression f, String variableName) {
+        if (!"x".equals(variableName) && !"y".equals(variableName)) {
+            throw new IllegalArgumentException(
+                    "La variable de integración debe ser x o y.");
+        }
+
+        String functionName = functionLabel(f, variableName);
+        String integralName = "∫" + functionName + " d" + variableName;
+
+        boolean graphable =
+                "x".equals(variableName) && !f.dependsOn("y");
+
+        List<SolutionStep> steps = new ArrayList<>();
+        steps.add(new SolutionStep("Función: " + functionName + " = " + f));
+
+        Expression antiderivative;
+
+        try {
+            antiderivative = antiderivative(f, steps, 0, variableName);
+        } catch (UnsupportedIntegralException e) {
+            steps.add(new SolutionStep(e.getMessage()));
+            steps.add(new SolutionStep(
+                    "Si necesitas un valor, usa el modo «Integral definida» "
+                            + "con un método numérico: no requiere antiderivada."));
+
+            if (!graphable) {
+                return new CalculationResult(
+                        integralName + ": no se encontró antiderivada",
+                        steps);
+            }
+
+            Graph graph = new Graph(
+                    List.of(new GraphCurve(
+                            "f(x) = " + f, f, CurveStyle.FUNCTION)),
+                    List.of(),
+                    new Range(-10, 10));
+
+            return new CalculationResult(
+                    integralName + ": no se encontró antiderivada",
+                    steps,
+                    graph);
+        }
+
+        steps.add(new SolutionStep(
+                "Resultado: " + integralName + " = "
+                        + antiderivative + " + C"));
+
+        steps.add(new SolutionStep(
+                verification(f, antiderivative, variableName)));
+
+        String summary = integralName + " = " + antiderivative + " + C";
+
+        /*
+         * No dibujamos expresiones multivariables en la gráfica
+         * bidimensional actual.
+         */
+        if (!graphable) {
+            return new CalculationResult(summary, steps);
+        }
+
+        Graph graph = new Graph(
+                List.of(
+                        new GraphCurve(
+                                "f(x) = " + f,
+                                f,
+                                CurveStyle.FUNCTION),
+                        new GraphCurve(
+                                "F(x) = " + antiderivative + "  (C = 0)",
+                                antiderivative,
+                                CurveStyle.ANTIDERIVATIVE)),
+                List.of(),
+                new Range(-10, 10));
+
+        return new CalculationResult(summary, steps, graph);
+    }
+
+
+
+    /** Describe la función según las variables que contiene. */
+    private static String functionLabel(
+            Expression f, String variableName) {
+        boolean hasX = f.dependsOn("x");
+        boolean hasY = f.dependsOn("y");
+
+        if (hasX && hasY) {
+            return "f(x,y)";
+        }
+        if (hasY) {
+            return "f(y)";
+        }
+        if (hasX) {
+            return "f(x)";
+        }
+
+        return "f(" + variableName + ")";
+    }
+
+    /**
+     * Comprueba el resultado derivándolo respecto de la variable de integración.
+     * La comparación numérica mantiene constante la otra variable.
+     */
+    private String verification(
+            Expression f,
+            Expression antiderivative,
+            String variableName) {
+
+        DerivativeCalculator calculator = "x".equals(variableName)
+                ? derivatives
+                : new DerivativeCalculator(variableName);
+
+        Expression derivative = Simplifier.simplify(
+                calculator.derive(antiderivative));
+
+        boolean partial = "y".equals(variableName) || f.dependsOn("y");
+        String notation = partial
+                ? "∂/∂" + variableName
+                : "d/d" + variableName;
+        String functionName = functionLabel(f, variableName);
+
+        return "Comprobación: " + notation + "["
+                + antiderivative + "] = " + derivative
+                + (sameFunction(f, derivative, variableName)
+                ? " = " + functionName + " ✓"
+                : " ≠ " + functionName + " ✗");
     }
 
     /**
@@ -128,6 +257,33 @@ public class IndefiniteIntegral {
         }
         return compared > 0;
     }
+    static boolean sameFunction(
+            Expression f,
+            Expression g,
+            String variableName) {
+
+        int compared = 0;
+        double parameter = 0.731;
+
+        for (double t : CHECK_POINTS) {
+            double x = "x".equals(variableName) ? t : parameter;
+            double y = "y".equals(variableName) ? t : parameter;
+
+            double a = f.evaluate(x, y);
+            double b = g.evaluate(x, y);
+
+            if (Double.isFinite(a) && Double.isFinite(b)) {
+                if (Math.abs(a - b)
+                        > 1e-7 * Math.max(1, Math.abs(a))) {
+                    return false;
+                }
+                compared++;
+            }
+        }
+
+        return compared > 0;
+    }
+
 
     /**
      * Una integración en curso: la lista de pasos que se llena, la variable y
@@ -167,9 +323,10 @@ public class IndefiniteIntegral {
             Expression f = Simplifier.simplify(integrand);
             Variable x = new Variable(variable);
 
-            if (!f.dependsOnVariable()) {
+            if (!f.dependsOn(variable)) {
                 Expression result = product(f, x);
-                record(level, IntegrationRule.CONSTANT, integral(f) + " = " + result);
+                record(level, IntegrationRule.CONSTANT,
+                        integral(f) + " = " + result);
                 return result;
             }
 
@@ -179,8 +336,8 @@ public class IndefiniteIntegral {
             }
 
             Monomial term = terms.getFirst();
-            Monomial constant = term.constantPart();
-            Monomial variablePart = term.variablePart();
+            Monomial constant = term.constantPart(variable);
+            Monomial variablePart = term.variablePart(variable);
             boolean hasConstant = !constant.coefficient().isOne() || !constant.factors().isEmpty();
             if (hasConstant) {
                 Expression k = constant.toExpression();

@@ -38,13 +38,16 @@ import java.util.Set;
  */
 public class SubstitutionMethod implements IntegrationTechnique {
 
-    private final DerivativeCalculator derivatives = new DerivativeCalculator();
 
     @Override
     public Optional<Expression> integrate(Monomial integrand, IntegrationContext context, int level) {
         Expression f = integrand.toExpression();
-        Variable x = new Variable(context.variableName());
-        Variable u = new Variable(context.variableName().equals("u") ? "w" : "u");
+        String variable = context.variableName();
+
+        DerivativeCalculator derivatives = new DerivativeCalculator(variable);
+
+        Variable x = new Variable(variable);
+        Variable u = new Variable(variable.equals("u") ? "w" : "u");
 
         for (Expression candidate : candidates(f, x)) {
             Expression du = Simplifier.simplify(derivatives.derive(candidate));

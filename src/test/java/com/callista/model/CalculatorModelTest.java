@@ -86,6 +86,28 @@ class CalculatorModelTest {
     }
 
     @Test
+    void derivesPartiallyWithRespectToXAndY()
+            throws InvalidExpressionException {
+
+        Expression function = model.interpret("x^3 + 3y");
+
+        CalculationResult derivativeX =
+                model.derive(function, 1, "x");
+
+        CalculationResult derivativeY =
+                model.derive(function, 1, "y");
+
+        assertEquals("∂f/∂x = 3*x^2",
+                derivativeX.getSummary());
+
+        assertEquals("∂f/∂y = 3",
+                derivativeY.getSummary());
+
+        assertTrue(derivativeX.getGraph().isEmpty());
+        assertTrue(derivativeY.getGraph().isEmpty());
+    }
+
+    @Test
     void derivesSeveralTimes() throws InvalidExpressionException {
         Expression function = model.interpret("x^3 - 4x + ln(x)");
         assertEquals("f''(x) = 6*x - 1/x^2", model.derive(function, 2).getSummary());

@@ -41,8 +41,29 @@ public class IntegralController implements OperationController {
         } catch (InvalidExpressionException e) {
             return invalid(parameters, Field.UPPER, "Límite superior: " + e.getMessage(), e.getPosition());
         }
+        String variableName = parameters.getVariableName();
+
         if (parameters.isExactSelected()) {
-            return Optional.of(model.exactIntegral(function, a, b));
+            return Optional.of(
+                    model.exactIntegral(function, a, b, variableName));
+        }
+        String otherVariable =
+                "x".equals(variableName) ? "y" : "x";
+
+        if (!"x".equals(variableName)
+                || function.dependsOn(otherVariable)) {
+
+            parameters.showGeneralError(
+                    "Los métodos numéricos actuales están preparados para "
+                            + "integrales respecto de x con funciones de una "
+                            + "sola variable. Para integrar respecto de y o "
+                            + "utilizar expresiones con x e y, selecciona "
+                            + "«Exacto».");
+
+            view.setStatus(
+                    "Selecciona Exacto para esta integral");
+
+            return Optional.empty();
         }
 
         double av = a.evaluate(0);

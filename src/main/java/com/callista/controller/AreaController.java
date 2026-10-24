@@ -12,8 +12,8 @@ import com.callista.view.panels.AreaPanel.Field;
 import java.util.Optional;
 
 /**
- * Operación «Área entre curvas»: lee la segunda curva g(x) (vacía es el eje
- * x) y los límites. Con a y b vacíos calcula la región que encierran f y g;
+ * Operación «Área entre curvas»: lee la segunda curva g, la variable y los
+ * límites. Con a y b vacíos calcula la región que encierran f y g;
  * con ambos, el área en [a, b].
  */
 public class AreaController implements OperationController {
@@ -29,19 +29,21 @@ public class AreaController implements OperationController {
     @Override
     public Optional<CalculationResult> calculate(Expression f) {
         AreaPanel parameters = view.getAreaPanel();
+        String variableName = parameters.getVariableName();
         Expression g;
         try {
             String text = parameters.getSecondFunctionText();
             g = text.isBlank() ? model.xAxis() : model.interpret(text);
         } catch (InvalidExpressionException e) {
-            return invalid(parameters, Field.SECOND_FUNCTION, "g(x): " + e.getMessage(), e.getPosition());
+            return invalid(parameters, Field.SECOND_FUNCTION,
+                    "g(" + variableName + "): " + e.getMessage(), e.getPosition());
         }
 
         String lowerText = parameters.getLowerText();
         String upperText = parameters.getUpperText();
         try {
             if (lowerText.isBlank() && upperText.isBlank()) {
-                return Optional.of(model.enclosedArea(f, g));
+                return Optional.of(model.enclosedArea(f, g, variableName));
             }
             if (lowerText.isBlank() || upperText.isBlank()) {
                 Field empty = lowerText.isBlank() ? Field.LOWER : Field.UPPER;
@@ -64,7 +66,7 @@ public class AreaController implements OperationController {
             return invalid(parameters, Field.UPPER, "Límite superior: " + e.getMessage(), e.getPosition());
         }
         try {
-            return Optional.of(model.areaBetween(f, g, a, b));
+            return Optional.of(model.areaBetween(f, g, a, b, variableName));
         } catch (ParameterException e) {
             return invalid(parameters, Field.LOWER, e.getMessage(), 1);
         }

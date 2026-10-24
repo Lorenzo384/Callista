@@ -57,6 +57,16 @@ class ExpressionParserTest {
     }
 
     @Test
+    void parsesAndEvaluatesExpressionsWithBothXAndY() throws InvalidExpressionException {
+        Expression expression = parse("x^3 + 3y");
+
+        assertEquals(20.0, expression.evaluate(2.0, 4.0), DELTA);
+        assertEquals(11.0, expression.evaluate(2.0, 1.0), DELTA);
+
+        assertEquals("x^3 + 3*y", expression.toString());
+    }
+
+    @Test
     void pythagoreanIdentityIsAlwaysOne() throws InvalidExpressionException {
         Expression identity = parse("sen(x)^2 + cos(x)^2");
         for (double x = -3; x <= 3; x += 0.7) {
@@ -101,7 +111,7 @@ class ExpressionParserTest {
             "2 $ x      | 3 | Carácter no válido «$»",
             "cosa(x)    | 1 | Símbolo desconocido «cosa»",
             "xsen(x)    | 1 | ¿quisiste decir x*sen?",
-            "y+1        | 1 | Variable desconocida «y»",
+            "z+1        | 1 | Variable desconocida «z»",
             "sen x      | 1 | La función «sen» necesita paréntesis",
             "sen^2(x)   | 1 | escribe sen(x)^2",
             "0,5        | 2 | usa punto",
